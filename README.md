@@ -35,7 +35,7 @@ Requires a running MongoDB instance (local `mongod`, Docker, or Atlas) reachable
 
 All non-auth routes require `Authorization: Bearer <accessToken>`.
 
-## Planned modules (see PROJECT_SPEC)
+## Planned modules (see [docs/PROJECT_SPEC.md](docs/PROJECT_SPEC.md))
 
 `operations/{time-clock,scheduling,forms-checklists,tasks}`,
 `communication/{chat,announcements,directory,help-desk}`,
