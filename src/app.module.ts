@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { OrganizationsModule } from './organizations/organizations.module';
+import { TimeClockModule } from './operations/time-clock/time-clock.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { OrganizationsModule } from './organizations/organizations.module';
     AuthModule,
     UsersModule,
     OrganizationsModule,
+    TimeClockModule,
   ],
   controllers: [AppController],
   providers: [AppService],

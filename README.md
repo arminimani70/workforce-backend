@@ -32,12 +32,15 @@ Requires a running MongoDB instance (local `mongod`, Docker, or Atlas) reachable
   `POST /auth/refresh`
 - **users** — `GET /users/me`
 - **organizations** — `GET /organizations/me`
+- **operations/time-clock** — `POST /time-clock/clock-in`, `POST /time-clock/clock-out`
+  (both accept an optional `{ lat, lng }` body), `GET /time-clock/status` (the caller's open
+  entry, if any), `GET /time-clock/history?limit=20`
 
 All non-auth routes require `Authorization: Bearer <accessToken>`.
 
 ## Planned modules (see [docs/PROJECT_SPEC.md](docs/PROJECT_SPEC.md))
 
-`operations/{time-clock,scheduling,forms-checklists,tasks}`,
+`operations/{scheduling,forms-checklists,tasks}`,
 `communication/{chat,announcements,directory,help-desk}`,
 `hr/{onboarding,documents,time-off,recognition}`.
 
