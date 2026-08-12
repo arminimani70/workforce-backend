@@ -63,6 +63,12 @@ Requires a running MongoDB instance (local `mongod`, Docker, or Atlas) reachable
   (the caller's own tasks), `GET /tasks` (every task in the org, owner/manager only, employee
   populated), `PATCH /tasks/:id/status` (`pending`/`in_progress`/`done` — the assignee or
   owner/manager can update; anyone else gets a `403`).
+- **hr/onboarding** — `GET /onboarding` (any authenticated user — the org's onboarding guide;
+  `{ organizationId: '', content: '', updatedAt: null }` if the org hasn't written one yet, no
+  404), `PUT /onboarding` (owner/manager only — replaces the guide's `content`, a single plain-
+  text/markdown-ish blob capped at 20,000 characters; upserts, so there's nothing to create up
+  front). One guide per organization, not per employee — unlike Availability/Shift/Task, there's
+  no per-user dimension here.
 
 All non-auth routes require `Authorization: Bearer <accessToken>`. Routes marked
 "owner/manager only" are enforced by `RolesGuard` + `@Roles(...)` — an employee token gets a
@@ -72,7 +78,7 @@ All non-auth routes require `Authorization: Bearer <accessToken>`. Routes marked
 
 `operations/forms-checklists`,
 `communication/{chat,announcements,directory,help-desk}`,
-`hr/{onboarding,documents,time-off,recognition}`.
+`hr/{documents,time-off,recognition}`.
 
 ## Scripts
 
