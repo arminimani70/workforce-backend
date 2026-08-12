@@ -8,6 +8,7 @@ import { UsersModule } from './users/users.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { TimeClockModule } from './operations/time-clock/time-clock.module';
 import { SchedulingModule } from './operations/scheduling/scheduling.module';
+import { AvailabilityModule } from './operations/availability/availability.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { SchedulingModule } from './operations/scheduling/scheduling.module';
     OrganizationsModule,
     TimeClockModule,
     SchedulingModule,
+    AvailabilityModule,
   ],
   controllers: [AppController],
   providers: [AppService],

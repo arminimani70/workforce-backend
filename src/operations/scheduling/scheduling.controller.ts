@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -20,10 +20,16 @@ export class SchedulingController {
   }
 
   @Get('me')
-  findMine(@CurrentUser() user: AuthenticatedUser) {
+  findMine(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
     return this.schedulingService.findForEmployee(
       user.organizationId,
       user.userId,
+      from ? new Date(from) : undefined,
+      to ? new Date(to) : undefined,
     );
   }
 

@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, QueryFilter } from 'mongoose';
 import { Shift, ShiftDocument } from './schemas/shift.schema';
 import { CreateShiftDto } from './dto/create-shift.dto';
 
@@ -25,10 +25,20 @@ export class SchedulingService {
     });
   }
 
-  findForEmployee(organizationId: string, employeeId: string) {
-    return this.shiftModel
-      .find({ organizationId, employeeId })
-      .sort({ startTime: 1 });
+  findForEmployee(
+    organizationId: string,
+    employeeId: string,
+    from?: Date,
+    to?: Date,
+  ) {
+    const filter: QueryFilter<ShiftDocument> = { organizationId, employeeId };
+    if (from || to) {
+      filter.startTime = {
+        ...(from && { $gte: from }),
+        ...(to && { $lte: to }),
+      };
+    }
+    return this.shiftModel.find(filter).sort({ startTime: 1 });
   }
 
   findAllForOrg(organizationId: string) {
