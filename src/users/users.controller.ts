@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Patch, Post, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -7,6 +7,8 @@ import type { AuthenticatedUser } from '../auth/types/authenticated-user.type';
 import { UserRole } from './schemas/user.schema';
 import { UsersService, toPublicUser } from './users.service';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('users')
@@ -16,6 +18,27 @@ export class UsersController {
   @Get('me')
   getMe(@CurrentUser() user: AuthenticatedUser) {
     return this.usersService.findById(user.userId);
+  }
+
+  @Patch('me')
+  updateMe(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: UpdateProfileDto,
+  ) {
+    return this.usersService.updateProfile(user.userId, dto);
+  }
+
+  @Patch('me/password')
+  async changeMyPassword(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: ChangePasswordDto,
+  ) {
+    await this.usersService.changePassword(
+      user.userId,
+      dto.currentPassword,
+      dto.newPassword,
+    );
+    return { success: true };
   }
 
   @Get()

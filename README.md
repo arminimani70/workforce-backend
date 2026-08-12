@@ -32,7 +32,14 @@ Requires a running MongoDB instance (local `mongod`, Docker, or Atlas) reachable
   `POST /auth/refresh`
 - **users** — `GET /users/me`, `GET /users` (list every member of the org, passwordHash never
   included), `POST /users` (owner/manager only — creates a new employee with a temporary
-  password; no self-registration flow for team members)
+  password; no self-registration flow for team members), `PATCH /users/me` (any authenticated
+  user — self-service profile edit: `fullName`, `phone`, `birthDate`, `address`,
+  `emergencyContactName`, `emergencyContactPhone`, `avatarUrl`; every field optional/partial.
+  `email` and `role` are deliberately not editable here — those stay admin-set. `avatarUrl` is
+  a base64 `data:image/...` URI, not an external link, capped at 700,000 characters — the
+  client should resize/compress before upload), `PATCH /users/me/password` (`currentPassword`
+  + `newPassword`, verified against the stored hash before it's changed — `401` on a wrong
+  current password).
 - **organizations** — `GET /organizations/me`
 - **operations/time-clock** — `POST /time-clock/clock-in`, `POST /time-clock/clock-out`
   (both accept an optional `{ lat, lng }` body), `GET /time-clock/status` (the caller's open

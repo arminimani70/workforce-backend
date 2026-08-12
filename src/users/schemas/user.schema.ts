@@ -37,11 +37,28 @@ export class User {
   @Prop({ type: String, enum: UserRole, default: UserRole.EMPLOYEE })
   role: UserRole;
 
+  // Self-editable profile fields. email and role are deliberately not here — those are set at
+  // creation/by an owner-manager, not something the employee changes themselves.
   @Prop({ trim: true })
   phone?: string;
 
+  // A data: URI (base64), not an external link — see UpdateProfileDto for the size/format cap.
+  // Named avatarUrl (not avatarData) so the frontend can drop it straight into an <Image
+  // source={{ uri }}> either way, regardless of how it's stored.
   @Prop()
   avatarUrl?: string;
+
+  @Prop()
+  birthDate?: Date;
+
+  @Prop({ trim: true })
+  address?: string;
+
+  @Prop({ trim: true })
+  emergencyContactName?: string;
+
+  @Prop({ trim: true })
+  emergencyContactPhone?: string;
 
   @Prop({ type: String, enum: UserStatus, default: UserStatus.ACTIVE })
   status: UserStatus;

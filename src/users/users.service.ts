@@ -2,11 +2,13 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import * as bcrypt from 'bcrypt';
 import { User, UserDocument, UserRole } from './schemas/user.schema';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 const SALT_ROUNDS = 10;
 
@@ -68,5 +70,52 @@ export class UsersService {
 
   comparePassword(plainText: string, passwordHash: string): Promise<boolean> {
     return bcrypt.compare(plainText, passwordHash);
+  }
+
+  // email and role are deliberately excluded — those aren't part of self-service profile
+  // editing (see UpdateProfileDto).
+  async updateProfile(
+    userId: string,
+    dto: UpdateProfileDto,
+  ): Promise<UserDocument> {
+    const update: Record<string, unknown> = {};
+    if (dto.fullName !== undefined) update.fullName = dto.fullName;
+    if (dto.phone !== undefined) update.phone = dto.phone;
+    if (dto.birthDate !== undefined) update.birthDate = new Date(dto.birthDate);
+    if (dto.address !== undefined) update.address = dto.address;
+    if (dto.emergencyContactName !== undefined) {
+      update.emergencyContactName = dto.emergencyContactName;
+    }
+    if (dto.emergencyContactPhone !== undefined) {
+      update.emergencyContactPhone = dto.emergencyContactPhone;
+    }
+    if (dto.avatarUrl !== undefined) update.avatarUrl = dto.avatarUrl;
+
+    const updated = await this.userModel.findByIdAndUpdate(userId, update, {
+      new: true,
+    });
+    if (!updated) {
+      throw new NotFoundException('User not found');
+    }
+    return updated;
+  }
+
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<void> {
+    const user = await this.userModel.findById(userId).select('+passwordHash');
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const matches = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!matches) {
+      throw new UnauthorizedException('Current password is incorrect');
+    }
+
+    user.passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+    await user.save();
   }
 }
