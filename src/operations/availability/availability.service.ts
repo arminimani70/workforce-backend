@@ -4,13 +4,15 @@ import { Model } from 'mongoose';
 import {
   Availability,
   AvailabilityDocument,
+  DayAvailabilityStatus,
 } from './schemas/availability.schema';
 import { DayAvailabilityDto } from './dto/update-availability.dto';
 
 function defaultDays(): DayAvailabilityDto[] {
   return Array.from({ length: 7 }, (_, dayOfWeek) => ({
     dayOfWeek,
-    available: false,
+    status: DayAvailabilityStatus.UNAVAILABLE,
+    positions: [],
   }));
 }
 

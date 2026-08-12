@@ -34,7 +34,9 @@ Requires a running MongoDB instance (local `mongod`, Docker, or Atlas) reachable
 - **organizations** — `GET /organizations/me`
 - **operations/time-clock** — `POST /time-clock/clock-in`, `POST /time-clock/clock-out`
   (both accept an optional `{ lat, lng }` body), `GET /time-clock/status` (the caller's open
-  entry, if any), `GET /time-clock/history?limit=20`
+  entry, if any), `GET /time-clock/history?limit=20`, `GET /time-clock/total?from=&to=`
+  (`{ totalSeconds }` summed over entries that started in that window; an entry still open
+  counts up to now)
 - **operations/scheduling** — `POST /shifts` (owner/manager only, starts `confirmed: false`),
   `PATCH /shifts/:id/confirm` (owner/manager only), `GET /shifts/me?from=&to=` (the caller's
   own shifts, optionally filtered by `startTime` — an `employee` token only ever gets
@@ -42,7 +44,9 @@ Requires a running MongoDB instance (local `mongod`, Docker, or Atlas) reachable
   (every shift in the org, confirmed or not, owner/manager only)
 - **operations/availability** — `GET /availability/me`, `PUT /availability/me`. A recurring
   weekly pattern (not tied to a specific date): 7 entries, one per day of week (0=Monday),
-  each either unavailable or available with an `HH:mm` start/end.
+  each with a `status` of `unavailable`, `available` (with an `HH:mm` start/end and one or
+  more `positions`: `frontdesk`/`helpdesk`/`information`/`consultation`), or `flexible` (no
+  preference — the manager decides).
 
 All non-auth routes require `Authorization: Bearer <accessToken>`. Routes marked
 "owner/manager only" are enforced by `RolesGuard` + `@Roles(...)` — an employee token gets a

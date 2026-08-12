@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, QueryFilter } from 'mongoose';
 import {
   TimeClockEntry,
   TimeClockEntryDocument,
@@ -77,5 +77,34 @@ export class TimeClockService {
       .find({ organizationId, employeeId })
       .sort({ clockInTime: -1 })
       .limit(limit);
+  }
+
+  // Sums (clockOutTime ?? now) - clockInTime for every entry that *started* in [from, to],
+  // so a currently open entry counts toward the total up to this instant.
+  async getTotalDuration(
+    organizationId: string,
+    employeeId: string,
+    from?: Date,
+    to?: Date,
+  ) {
+    const filter: QueryFilter<TimeClockEntryDocument> = {
+      organizationId,
+      employeeId,
+    };
+    if (from || to) {
+      filter.clockInTime = {
+        ...(from && { $gte: from }),
+        ...(to && { $lte: to }),
+      };
+    }
+
+    const entries = await this.entryModel.find(filter);
+    const now = new Date();
+    const totalMs = entries.reduce((sum, entry) => {
+      const end = entry.clockOutTime ?? now;
+      return sum + (end.getTime() - entry.clockInTime.getTime());
+    }, 0);
+
+    return { totalSeconds: Math.round(totalMs / 1000) };
   }
 }

@@ -50,4 +50,18 @@ export class TimeClockController {
       limit ? Number(limit) : undefined,
     );
   }
+
+  @Get('total')
+  getTotal(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    return this.timeClockService.getTotalDuration(
+      user.organizationId,
+      user.userId,
+      from ? new Date(from) : undefined,
+      to ? new Date(to) : undefined,
+    );
+  }
 }

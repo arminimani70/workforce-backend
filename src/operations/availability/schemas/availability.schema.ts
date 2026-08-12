@@ -3,21 +3,40 @@ import { HydratedDocument, Types } from 'mongoose';
 
 export type AvailabilityDocument = HydratedDocument<Availability>;
 
+export enum Position {
+  FRONTDESK = 'frontdesk',
+  HELPDESK = 'helpdesk',
+  INFORMATION = 'information',
+  CONSULTATION = 'consultation',
+}
+
+export enum DayAvailabilityStatus {
+  // Can't work this day at all.
+  UNAVAILABLE = 'unavailable',
+  // Has a specific time window + position(s) they can work.
+  AVAILABLE = 'available',
+  // No preference — the manager decides whether/how to schedule them.
+  FLEXIBLE = 'flexible',
+}
+
 // 0 = Monday .. 6 = Sunday (ISO week order), matching how the frontend renders the week.
 @Schema({ _id: false })
 class DayAvailability {
   @Prop({ required: true, min: 0, max: 6 })
   dayOfWeek: number;
 
-  @Prop({ required: true, default: false })
-  available: boolean;
+  @Prop({ type: String, enum: DayAvailabilityStatus, required: true })
+  status: DayAvailabilityStatus;
 
-  // "HH:mm", 24-hour. Only meaningful when available is true.
+  // "HH:mm", 24-hour. Only meaningful when status is AVAILABLE.
   @Prop()
   startTime?: string;
 
   @Prop()
   endTime?: string;
+
+  @Prop({ type: [String], enum: Position, default: [] })
+  positions: Position[];
 }
 
 @Schema({ timestamps: true })
