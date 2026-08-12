@@ -57,11 +57,13 @@ export class SchedulingController {
   @Get('coworkers')
   findCoworkers(
     @CurrentUser() user: AuthenticatedUser,
-    @Query('date') date: string,
+    @Query('from') from: string,
+    @Query('to') to: string,
   ) {
-    return this.schedulingService.findCoworkersForDate(
+    return this.schedulingService.findCoworkersInRange(
       user.organizationId,
-      new Date(date),
+      new Date(from),
+      new Date(to),
     );
   }
 

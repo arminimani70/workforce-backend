@@ -52,20 +52,16 @@ export class SchedulingService {
     return this.shiftModel.find({ organizationId }).sort({ startTime: 1 });
   }
 
-  // Every confirmed shift in the org on the given date, with the employee's name/role
+  // Every confirmed shift in the org starting in [from, to], with the employee's name/role
   // populated — this is what powers "who else is working today" for any authenticated user,
-  // not just owner/manager.
-  findCoworkersForDate(organizationId: string, date: Date) {
-    const dayStart = new Date(date);
-    dayStart.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(date);
-    dayEnd.setHours(23, 59, 59, 999);
-
+  // not just owner/manager. Takes the exact window rather than a bare date so the caller's
+  // local-timezone day boundaries are used instead of the server's.
+  findCoworkersInRange(organizationId: string, from: Date, to: Date) {
     return this.shiftModel
       .find({
         organizationId,
         confirmed: true,
-        startTime: { $gte: dayStart, $lte: dayEnd },
+        startTime: { $gte: from, $lte: to },
       })
       .populate('employeeId', 'fullName role')
       .sort({ startTime: 1 });

@@ -44,9 +44,11 @@ Requires a running MongoDB instance (local `mongod`, Docker, or Atlas) reachable
   `PATCH /shifts/:id/confirm` (owner/manager only), `GET /shifts/me?from=&to=` (the caller's
   own shifts, optionally filtered by `startTime` — an `employee` token only ever gets
   `confirmed: true` shifts; owner/manager also see their own unconfirmed ones), `GET /shifts`
-  (every shift in the org, confirmed or not, owner/manager only), `GET /shifts/coworkers?date=`
-  (any authenticated user — every confirmed shift org-wide on that date, `employeeId`
-  populated with `fullName`/`role`, for "who else is working today")
+  (every shift in the org, confirmed or not, owner/manager only),
+  `GET /shifts/coworkers?from=&to=` (any authenticated user — every confirmed shift org-wide
+  with `startTime` in that window, `employeeId` populated with `fullName`/`role`, for "who
+  else is working today"; takes an explicit window rather than a bare date so the caller's
+  local-timezone day boundaries are used, not the server's)
 - **operations/availability** — `GET /availability/me`, `PUT /availability/me`. A recurring
   weekly pattern (not tied to a specific date): 7 entries, one per day of week (0=Monday),
   each with a `status` of `unavailable`, `available` (with an `HH:mm` start/end and one or
