@@ -116,4 +116,19 @@ export class SchedulingService {
   reject(organizationId: string, shiftId: string) {
     return this.setApproval(organizationId, shiftId, ShiftApproval.REJECTED);
   }
+
+  // Bulk-confirms every still-pending (draft) shift in the range at once — the "Publish Week"
+  // action for a manager who's been building the week's schedule shift by shift and wants it
+  // to become visible to employees all together, rather than confirming each one individually.
+  async publishRange(organizationId: string, from: Date, to: Date) {
+    const result = await this.shiftModel.updateMany(
+      {
+        organizationId,
+        approval: ShiftApproval.PENDING,
+        startTime: { $gte: from, $lte: to },
+      },
+      { approval: ShiftApproval.APPROVED },
+    );
+    return { publishedCount: result.modifiedCount };
+  }
 }

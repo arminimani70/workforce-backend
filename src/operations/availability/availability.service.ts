@@ -69,4 +69,18 @@ export class AvailabilityService {
       { upsert: true, new: true },
     );
   }
+
+  // Every employee who has ever saved an availability pattern — someone who never touched the
+  // screen simply has no document and won't appear here, which is fine: the week-builder only
+  // cares about people who marked something. employeeId is populated for display; days are
+  // sanitized the same way getMine's are.
+  async findAllForOrg(organizationId: string) {
+    const records = await this.availabilityModel
+      .find({ organizationId })
+      .populate('employeeId', 'fullName role');
+    return records.map((record) => ({
+      employeeId: record.employeeId,
+      days: record.days.map(sanitizeDay),
+    }));
+  }
 }

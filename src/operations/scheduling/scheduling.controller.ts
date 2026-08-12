@@ -67,6 +67,22 @@ export class SchedulingController {
     );
   }
 
+  // Bulk-confirms every pending shift in the range — the "Publish Week" action after building
+  // a week's schedule, so it becomes visible to employees all at once instead of shift by shift.
+  @Roles(UserRole.OWNER, UserRole.MANAGER)
+  @Patch('publish')
+  publish(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('from') from: string,
+    @Query('to') to: string,
+  ) {
+    return this.schedulingService.publishRange(
+      user.organizationId,
+      new Date(from),
+      new Date(to),
+    );
+  }
+
   @Roles(UserRole.OWNER, UserRole.MANAGER)
   @Patch(':id/confirm')
   confirm(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {

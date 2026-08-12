@@ -47,20 +47,27 @@ Requires a running MongoDB instance (local `mongod`, Docker, or Atlas) reachable
   (`{ totalSeconds }` summed over entries that started in that window; an entry still open
   counts up to now)
 - **operations/scheduling** — `POST /shifts` (owner/manager only, starts `approval: pending`,
-  optional `position`: `frontdesk`/`helpdesk`/`information`/`consultation`),
+  optional `position`: `frontdesk`/`helpdesk`/`information`/`consultation`/`manager`),
   `PATCH /shifts/:id/confirm` / `PATCH /shifts/:id/reject` (owner/manager only),
-  `GET /shifts/me?from=&to=` (the caller's own shifts, optionally filtered by `startTime` — an
-  `employee` token only ever gets `approval: approved` shifts; owner/manager also see their
-  own pending/rejected ones), `GET /shifts` (every shift in the org regardless of approval,
-  owner/manager only), `GET /shifts/coworkers?from=&to=` (any authenticated user — every
-  approved shift org-wide with `startTime` in that window, `employeeId` populated with
-  `fullName`/`role`, for "who else is working today"; takes an explicit window rather than a
-  bare date so the caller's local-timezone day boundaries are used, not the server's)
+  `PATCH /shifts/publish?from=&to=` (owner/manager only — bulk-confirms every still-`pending`
+  shift with `startTime` in the range in one call, `{ publishedCount }`; the "Publish Week"
+  action after building a week's schedule shift by shift, so it becomes visible to employees
+  all at once instead of one shift at a time), `GET /shifts/me?from=&to=` (the caller's own
+  shifts, optionally filtered by `startTime` — an `employee` token only ever gets
+  `approval: approved` shifts; owner/manager also see their own pending/rejected ones),
+  `GET /shifts` (every shift in the org regardless of approval, owner/manager only),
+  `GET /shifts/coworkers?from=&to=` (any authenticated user — every approved shift org-wide
+  with `startTime` in that window, `employeeId` populated with `fullName`/`role`, for "who else
+  is working today"; takes an explicit window rather than a bare date so the caller's
+  local-timezone day boundaries are used, not the server's)
 - **operations/availability** — `GET /availability/me`, `PUT /availability/me`. A recurring
   weekly pattern (not tied to a specific date): 7 entries, one per day of week (0=Monday),
   each with a `status` of `unavailable`, `available` (with an `HH:mm` start/end and one or
-  more `positions`: `frontdesk`/`helpdesk`/`information`/`consultation`), or `flexible` (no
-  preference — the manager decides).
+  more `positions`: `frontdesk`/`helpdesk`/`information`/`consultation`/`manager`), or
+  `flexible` (no preference — the manager decides). `GET /availability` (owner/manager only —
+  every employee's pattern, `employeeId` populated with `fullName`/`role`; someone who's never
+  saved a pattern simply has no entry) powers the week-builder's "who marked themselves
+  available this day" cross-reference.
 - **operations/tasks** — `POST /tasks` (owner/manager only — assign directly with
   `assignedTo`, or omit it and give `position` + `dueDate` instead: the server finds whoever
   has an *approved* shift for that position on that date and assigns them; 404s if nobody
