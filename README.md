@@ -35,12 +35,16 @@ Requires a running MongoDB instance (local `mongod`, Docker, or Atlas) reachable
 - **operations/time-clock** — `POST /time-clock/clock-in`, `POST /time-clock/clock-out`
   (both accept an optional `{ lat, lng }` body), `GET /time-clock/status` (the caller's open
   entry, if any), `GET /time-clock/history?limit=20`
+- **operations/scheduling** — `POST /shifts` (owner/manager only), `GET /shifts/me` (the
+  caller's own shifts), `GET /shifts` (all shifts in the org, owner/manager only)
 
-All non-auth routes require `Authorization: Bearer <accessToken>`.
+All non-auth routes require `Authorization: Bearer <accessToken>`. Routes marked
+"owner/manager only" are enforced by `RolesGuard` + `@Roles(...)` — an employee token gets a
+`403`.
 
 ## Planned modules (see [docs/PROJECT_SPEC.md](docs/PROJECT_SPEC.md))
 
-`operations/{scheduling,forms-checklists,tasks}`,
+`operations/{forms-checklists,tasks}`,
 `communication/{chat,announcements,directory,help-desk}`,
 `hr/{onboarding,documents,time-off,recognition}`.
 
