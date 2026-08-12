@@ -1,6 +1,10 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, QueryFilter } from 'mongoose';
+import { isValidObjectId, Model, QueryFilter } from 'mongoose';
 import { Shift, ShiftDocument } from './schemas/shift.schema';
 import { CreateShiftDto } from './dto/create-shift.dto';
 
@@ -28,20 +32,38 @@ export class SchedulingService {
   findForEmployee(
     organizationId: string,
     employeeId: string,
-    from?: Date,
-    to?: Date,
+    options: { from?: Date; to?: Date; confirmedOnly?: boolean } = {},
   ) {
     const filter: QueryFilter<ShiftDocument> = { organizationId, employeeId };
-    if (from || to) {
+    if (options.from || options.to) {
       filter.startTime = {
-        ...(from && { $gte: from }),
-        ...(to && { $lte: to }),
+        ...(options.from && { $gte: options.from }),
+        ...(options.to && { $lte: options.to }),
       };
+    }
+    if (options.confirmedOnly) {
+      filter.confirmed = true;
     }
     return this.shiftModel.find(filter).sort({ startTime: 1 });
   }
 
   findAllForOrg(organizationId: string) {
     return this.shiftModel.find({ organizationId }).sort({ startTime: 1 });
+  }
+
+  async confirm(organizationId: string, shiftId: string) {
+    if (!isValidObjectId(shiftId)) {
+      throw new NotFoundException('Shift not found');
+    }
+
+    const shift = await this.shiftModel.findOneAndUpdate(
+      { _id: shiftId, organizationId },
+      { confirmed: true },
+      { new: true },
+    );
+    if (!shift) {
+      throw new NotFoundException('Shift not found');
+    }
+    return shift;
   }
 }

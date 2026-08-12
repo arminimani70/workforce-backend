@@ -34,6 +34,10 @@ export class Shift {
   @Prop({ type: String, enum: ShiftStatus, default: ShiftStatus.SCHEDULED })
   status: ShiftStatus;
 
+  // A manager/owner must confirm a shift before the assigned employee can see it.
+  @Prop({ required: true, default: false })
+  confirmed: boolean;
+
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   createdBy: Types.ObjectId;
 }

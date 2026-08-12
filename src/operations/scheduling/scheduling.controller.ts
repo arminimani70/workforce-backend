@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -25,11 +34,17 @@ export class SchedulingController {
     @Query('from') from?: string,
     @Query('to') to?: string,
   ) {
+    // Owner/manager see their own drafts too (so they can find and confirm them);
+    // a plain employee only ever sees shifts a manager has confirmed.
+    const confirmedOnly = user.role === UserRole.EMPLOYEE;
     return this.schedulingService.findForEmployee(
       user.organizationId,
       user.userId,
-      from ? new Date(from) : undefined,
-      to ? new Date(to) : undefined,
+      {
+        from: from ? new Date(from) : undefined,
+        to: to ? new Date(to) : undefined,
+        confirmedOnly,
+      },
     );
   }
 
@@ -37,5 +52,11 @@ export class SchedulingController {
   @Get()
   findAll(@CurrentUser() user: AuthenticatedUser) {
     return this.schedulingService.findAllForOrg(user.organizationId);
+  }
+
+  @Roles(UserRole.OWNER, UserRole.MANAGER)
+  @Patch(':id/confirm')
+  confirm(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
+    return this.schedulingService.confirm(user.organizationId, id);
   }
 }

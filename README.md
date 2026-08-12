@@ -35,9 +35,11 @@ Requires a running MongoDB instance (local `mongod`, Docker, or Atlas) reachable
 - **operations/time-clock** — `POST /time-clock/clock-in`, `POST /time-clock/clock-out`
   (both accept an optional `{ lat, lng }` body), `GET /time-clock/status` (the caller's open
   entry, if any), `GET /time-clock/history?limit=20`
-- **operations/scheduling** — `POST /shifts` (owner/manager only), `GET /shifts/me?from=&to=`
-  (the caller's own shifts, optionally filtered by `startTime`), `GET /shifts` (all shifts in
-  the org, owner/manager only)
+- **operations/scheduling** — `POST /shifts` (owner/manager only, starts `confirmed: false`),
+  `PATCH /shifts/:id/confirm` (owner/manager only), `GET /shifts/me?from=&to=` (the caller's
+  own shifts, optionally filtered by `startTime` — an `employee` token only ever gets
+  `confirmed: true` shifts; owner/manager also see their own unconfirmed ones), `GET /shifts`
+  (every shift in the org, confirmed or not, owner/manager only)
 - **operations/availability** — `GET /availability/me`, `PUT /availability/me`. A recurring
   weekly pattern (not tied to a specific date): 7 entries, one per day of week (0=Monday),
   each either unavailable or available with an `HH:mm` start/end.
