@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
+import { Position } from '../../../common/enums/position.enum';
 
 export type ShiftDocument = HydratedDocument<Shift>;
 
@@ -30,6 +31,9 @@ export class Shift {
 
   @Prop({ trim: true })
   jobSite?: string;
+
+  @Prop({ type: String, enum: Position })
+  position?: Position;
 
   @Prop({ type: String, enum: ShiftStatus, default: ShiftStatus.SCHEDULED })
   status: ShiftStatus;

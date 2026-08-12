@@ -54,6 +54,17 @@ export class SchedulingController {
     return this.schedulingService.findAllForOrg(user.organizationId);
   }
 
+  @Get('coworkers')
+  findCoworkers(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('date') date: string,
+  ) {
+    return this.schedulingService.findCoworkersForDate(
+      user.organizationId,
+      new Date(date),
+    );
+  }
+
   @Roles(UserRole.OWNER, UserRole.MANAGER)
   @Patch(':id/confirm')
   confirm(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {

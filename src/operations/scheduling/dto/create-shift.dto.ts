@@ -1,4 +1,11 @@
-import { IsISO8601, IsMongoId, IsOptional, IsString } from 'class-validator';
+import {
+  IsEnum,
+  IsISO8601,
+  IsMongoId,
+  IsOptional,
+  IsString,
+} from 'class-validator';
+import { Position } from '../../../common/enums/position.enum';
 
 export class CreateShiftDto {
   @IsMongoId()
@@ -13,4 +20,8 @@ export class CreateShiftDto {
   @IsOptional()
   @IsString()
   jobSite?: string;
+
+  @IsOptional()
+  @IsEnum(Position)
+  position?: Position;
 }

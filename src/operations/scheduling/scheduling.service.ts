@@ -26,6 +26,7 @@ export class SchedulingService {
       startTime: dto.startTime,
       endTime: dto.endTime,
       jobSite: dto.jobSite,
+      position: dto.position,
     });
   }
 
@@ -49,6 +50,25 @@ export class SchedulingService {
 
   findAllForOrg(organizationId: string) {
     return this.shiftModel.find({ organizationId }).sort({ startTime: 1 });
+  }
+
+  // Every confirmed shift in the org on the given date, with the employee's name/role
+  // populated — this is what powers "who else is working today" for any authenticated user,
+  // not just owner/manager.
+  findCoworkersForDate(organizationId: string, date: Date) {
+    const dayStart = new Date(date);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(date);
+    dayEnd.setHours(23, 59, 59, 999);
+
+    return this.shiftModel
+      .find({
+        organizationId,
+        confirmed: true,
+        startTime: { $gte: dayStart, $lte: dayEnd },
+      })
+      .populate('employeeId', 'fullName role')
+      .sort({ startTime: 1 });
   }
 
   async confirm(organizationId: string, shiftId: string) {

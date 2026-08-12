@@ -1,14 +1,10 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
+import { Position } from '../../../common/enums/position.enum';
 
 export type AvailabilityDocument = HydratedDocument<Availability>;
 
-export enum Position {
-  FRONTDESK = 'frontdesk',
-  HELPDESK = 'helpdesk',
-  INFORMATION = 'information',
-  CONSULTATION = 'consultation',
-}
+export { Position };
 
 export enum DayAvailabilityStatus {
   // Can't work this day at all.
