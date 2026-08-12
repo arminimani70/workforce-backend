@@ -34,16 +34,16 @@ export class SchedulingController {
     @Query('from') from?: string,
     @Query('to') to?: string,
   ) {
-    // Owner/manager see their own drafts too (so they can find and confirm them);
-    // a plain employee only ever sees shifts a manager has confirmed.
-    const confirmedOnly = user.role === UserRole.EMPLOYEE;
+    // Owner/manager see their own pending/rejected ones too (so they can find and act on
+    // them); a plain employee only ever sees shifts a manager has approved.
+    const approvedOnly = user.role === UserRole.EMPLOYEE;
     return this.schedulingService.findForEmployee(
       user.organizationId,
       user.userId,
       {
         from: from ? new Date(from) : undefined,
         to: to ? new Date(to) : undefined,
-        confirmedOnly,
+        approvedOnly,
       },
     );
   }
@@ -71,5 +71,11 @@ export class SchedulingController {
   @Patch(':id/confirm')
   confirm(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
     return this.schedulingService.confirm(user.organizationId, id);
+  }
+
+  @Roles(UserRole.OWNER, UserRole.MANAGER)
+  @Patch(':id/reject')
+  reject(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
+    return this.schedulingService.reject(user.organizationId, id);
   }
 }

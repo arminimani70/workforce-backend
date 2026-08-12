@@ -39,21 +39,30 @@ Requires a running MongoDB instance (local `mongod`, Docker, or Atlas) reachable
   entry, if any), `GET /time-clock/history?limit=20`, `GET /time-clock/total?from=&to=`
   (`{ totalSeconds }` summed over entries that started in that window; an entry still open
   counts up to now)
-- **operations/scheduling** — `POST /shifts` (owner/manager only, starts `confirmed: false`,
+- **operations/scheduling** — `POST /shifts` (owner/manager only, starts `approval: pending`,
   optional `position`: `frontdesk`/`helpdesk`/`information`/`consultation`),
-  `PATCH /shifts/:id/confirm` (owner/manager only), `GET /shifts/me?from=&to=` (the caller's
-  own shifts, optionally filtered by `startTime` — an `employee` token only ever gets
-  `confirmed: true` shifts; owner/manager also see their own unconfirmed ones), `GET /shifts`
-  (every shift in the org, confirmed or not, owner/manager only),
-  `GET /shifts/coworkers?from=&to=` (any authenticated user — every confirmed shift org-wide
-  with `startTime` in that window, `employeeId` populated with `fullName`/`role`, for "who
-  else is working today"; takes an explicit window rather than a bare date so the caller's
-  local-timezone day boundaries are used, not the server's)
+  `PATCH /shifts/:id/confirm` / `PATCH /shifts/:id/reject` (owner/manager only),
+  `GET /shifts/me?from=&to=` (the caller's own shifts, optionally filtered by `startTime` — an
+  `employee` token only ever gets `approval: approved` shifts; owner/manager also see their
+  own pending/rejected ones), `GET /shifts` (every shift in the org regardless of approval,
+  owner/manager only), `GET /shifts/coworkers?from=&to=` (any authenticated user — every
+  approved shift org-wide with `startTime` in that window, `employeeId` populated with
+  `fullName`/`role`, for "who else is working today"; takes an explicit window rather than a
+  bare date so the caller's local-timezone day boundaries are used, not the server's)
 - **operations/availability** — `GET /availability/me`, `PUT /availability/me`. A recurring
   weekly pattern (not tied to a specific date): 7 entries, one per day of week (0=Monday),
   each with a `status` of `unavailable`, `available` (with an `HH:mm` start/end and one or
   more `positions`: `frontdesk`/`helpdesk`/`information`/`consultation`), or `flexible` (no
   preference — the manager decides).
+- **operations/tasks** — `POST /tasks` (owner/manager only — assign directly with
+  `assignedTo`, or omit it and give `position` + `dueDate` instead: the server finds whoever
+  has an *approved* shift for that position on that date and assigns them; 404s if nobody
+  does), `POST /tasks/batch` (owner/manager only — same title/description across multiple
+  `dueDates`, each resolved independently by `position`, so different days can land on
+  different people; returns one result per date noting whether it was created), `GET /tasks/me`
+  (the caller's own tasks), `GET /tasks` (every task in the org, owner/manager only, employee
+  populated), `PATCH /tasks/:id/status` (`pending`/`in_progress`/`done` — the assignee or
+  owner/manager can update; anyone else gets a `403`).
 
 All non-auth routes require `Authorization: Bearer <accessToken>`. Routes marked
 "owner/manager only" are enforced by `RolesGuard` + `@Roles(...)` — an employee token gets a
@@ -61,7 +70,7 @@ All non-auth routes require `Authorization: Bearer <accessToken>`. Routes marked
 
 ## Planned modules (see [docs/PROJECT_SPEC.md](docs/PROJECT_SPEC.md))
 
-`operations/{forms-checklists,tasks}`,
+`operations/forms-checklists`,
 `communication/{chat,announcements,directory,help-desk}`,
 `hr/{onboarding,documents,time-off,recognition}`.
 

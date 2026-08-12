@@ -9,6 +9,7 @@ import { OrganizationsModule } from './organizations/organizations.module';
 import { TimeClockModule } from './operations/time-clock/time-clock.module';
 import { SchedulingModule } from './operations/scheduling/scheduling.module';
 import { AvailabilityModule } from './operations/availability/availability.module';
+import { TasksModule } from './operations/tasks/tasks.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { AvailabilityModule } from './operations/availability/availability.modul
     TimeClockModule,
     SchedulingModule,
     AvailabilityModule,
+    TasksModule,
   ],
   controllers: [AppController],
   providers: [AppService],

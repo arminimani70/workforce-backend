@@ -10,6 +10,12 @@ export enum ShiftStatus {
   MISSED = 'missed',
 }
 
+export enum ShiftApproval {
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
+}
+
 @Schema({ timestamps: true })
 export class Shift {
   @Prop({
@@ -38,9 +44,9 @@ export class Shift {
   @Prop({ type: String, enum: ShiftStatus, default: ShiftStatus.SCHEDULED })
   status: ShiftStatus;
 
-  // A manager/owner must confirm a shift before the assigned employee can see it.
-  @Prop({ required: true, default: false })
-  confirmed: boolean;
+  // A manager/owner must approve a shift before the assigned employee can see it.
+  @Prop({ type: String, enum: ShiftApproval, default: ShiftApproval.PENDING })
+  approval: ShiftApproval;
 
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   createdBy: Types.ObjectId;

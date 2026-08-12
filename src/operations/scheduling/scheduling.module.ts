@@ -10,5 +10,6 @@ import { SchedulingController } from './scheduling.controller';
   ],
   controllers: [SchedulingController],
   providers: [SchedulingService],
+  exports: [SchedulingService],
 })
 export class SchedulingModule {}
