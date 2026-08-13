@@ -68,6 +68,19 @@ Requires a running MongoDB instance (local `mongod`, Docker, or Atlas) reachable
   every employee's pattern, `employeeId` populated with `fullName`/`role`; someone who's never
   saved a pattern simply has no entry) powers the week-builder's "who marked themselves
   available this day" cross-reference.
+- **operations/scheduling/swap-requests** — direct 1:1 shift trades, gated by both the target
+  employee and a manager: `POST /shifts/swap-requests` (any authenticated user — offers one of
+  the caller's own *approved* shifts in trade for another employee's *approved* shift, both by
+  `id`; starts `status: pending_target`), `GET /shifts/swap-requests/me` (every request the
+  caller is on either side of, sent or received), `GET /shifts/swap-requests` (owner/manager
+  only — every request already accepted by its target and now awaiting manager approval),
+  `PATCH /shifts/swap-requests/:id/accept` / `/decline` (target employee only, while
+  `pending_target` — accept moves it to `pending_manager`, decline moves it to `rejected`),
+  `PATCH /shifts/swap-requests/:id/cancel` (requester only, while still `pending_target`),
+  `PATCH /shifts/swap-requests/:id/approve` / `/deny` (owner/manager only, while
+  `pending_manager` — approve is the only place the actual swap happens: the two shifts'
+  `employeeId` are exchanged and the request becomes `approved`; deny leaves both shifts
+  untouched and marks it `rejected`).
 - **operations/tasks** — `POST /tasks` (owner/manager only — assign directly with
   `assignedTo`, or omit it and give `position` + `dueDate` instead: the server finds whoever
   has an *approved* shift for that position on that date and assigns them; 404s if nobody
