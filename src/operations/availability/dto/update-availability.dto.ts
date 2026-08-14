@@ -1,31 +1,20 @@
-import { Type } from 'class-transformer';
 import {
-  ArrayMaxSize,
-  ArrayMinSize,
   IsArray,
   IsEnum,
-  IsInt,
+  IsISO8601,
   IsOptional,
   Matches,
-  Max,
-  Min,
-  ValidateNested,
 } from 'class-validator';
-import {
-  DayAvailabilityStatus,
-  Position,
-} from '../schemas/availability.schema';
+import { AvailabilityStatus, Position } from '../schemas/availability.schema';
 
 const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 
-export class DayAvailabilityDto {
-  @IsInt()
-  @Min(0)
-  @Max(6)
-  dayOfWeek: number;
+export class UpdateAvailabilityDto {
+  @IsISO8601()
+  date: string;
 
-  @IsEnum(DayAvailabilityStatus)
-  status: DayAvailabilityStatus;
+  @IsEnum(AvailabilityStatus)
+  status: AvailabilityStatus;
 
   @IsOptional()
   @Matches(TIME_PATTERN, { message: 'startTime must be HH:mm' })
@@ -39,13 +28,4 @@ export class DayAvailabilityDto {
   @IsArray()
   @IsEnum(Position, { each: true })
   positions?: Position[];
-}
-
-export class UpdateAvailabilityDto {
-  @IsArray()
-  @ArrayMinSize(7)
-  @ArrayMaxSize(7)
-  @ValidateNested({ each: true })
-  @Type(() => DayAvailabilityDto)
-  days: DayAvailabilityDto[];
 }

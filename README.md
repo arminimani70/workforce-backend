@@ -60,14 +60,18 @@ Requires a running MongoDB instance (local `mongod`, Docker, or Atlas) reachable
   with `startTime` in that window, `employeeId` populated with `fullName`/`role`, for "who else
   is working today"; takes an explicit window rather than a bare date so the caller's
   local-timezone day boundaries are used, not the server's)
-- **operations/availability** — `GET /availability/me`, `PUT /availability/me`. A recurring
-  weekly pattern (not tied to a specific date): 7 entries, one per day of week (0=Monday),
-  each with a `status` of `unavailable`, `available` (with an `HH:mm` start/end and one or
-  more `positions`: `frontdesk`/`helpdesk`/`information`/`consultation`/`manager`), or
-  `flexible` (no preference — the manager decides). `GET /availability` (owner/manager only —
-  every employee's pattern, `employeeId` populated with `fullName`/`role`; someone who's never
-  saved a pattern simply has no entry) powers the week-builder's "who marked themselves
-  available this day" cross-reference.
+- **operations/availability** — date-based, not a recurring weekly pattern: one entry per
+  (employee, exact calendar date), so availability can be set independently for any date in
+  any future week. `GET /availability/me?from=&to=` (every date the caller has set a
+  preference for in that range — a date with no entry simply hasn't been touched), `PUT
+  /availability/me` (upserts a single date: `{ date, status, startTime?, endTime?, positions?
+  }`, `status` one of `unavailable`, `available` (with an `HH:mm` start/end and one or more
+  `positions`: `frontdesk`/`helpdesk`/`information`/`consultation`/`manager`), or `flexible`
+  (no preference — the manager decides)), `DELETE /availability/me?date=` (clears a date back
+  to "not set", distinct from explicitly marking it `unavailable`). `GET
+  /availability?from=&to=` (owner/manager only — every entry in the range org-wide,
+  `employeeId` populated with `fullName`/`role`) powers the week-builder's "who marked
+  themselves available this day" cross-reference against the exact dates being built.
 - **operations/scheduling/swap-requests** — direct 1:1 shift trades, gated by both the target
   employee and a manager: `POST /shifts/swap-requests` (any authenticated user — offers one of
   the caller's own *approved* shifts in trade for another employee's *approved* shift, both by

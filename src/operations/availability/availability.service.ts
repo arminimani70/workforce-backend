@@ -4,42 +4,9 @@ import { Model } from 'mongoose';
 import {
   Availability,
   AvailabilityDocument,
-  DayAvailabilityStatus,
+  AvailabilityStatus,
 } from './schemas/availability.schema';
-import { DayAvailabilityDto } from './dto/update-availability.dto';
-
-function defaultDays(): DayAvailabilityDto[] {
-  return Array.from({ length: 7 }, (_, dayOfWeek) => ({
-    dayOfWeek,
-    status: DayAvailabilityStatus.UNAVAILABLE,
-    positions: [],
-  }));
-}
-
-const VALID_STATUSES = Object.values(DayAvailabilityStatus) as string[];
-
-// Reshapes whatever is actually stored into today's DayAvailabilityDto shape, dropping any
-// stray/legacy fields and defaulting an unrecognized status to unavailable. Without this, data
-// saved under a previous schema version (e.g. the old available:boolean field) would come back
-// out of GET, get echoed straight into PUT by the client, and fail validation there.
-// Typed loosely on purpose: this reads whatever shape is actually stored, which may predate
-// the current schema (see comment above).
-/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment */
-function sanitizeDay(day: any): DayAvailabilityDto {
-  const status = VALID_STATUSES.includes(day.status)
-    ? (day.status as DayAvailabilityStatus)
-    : DayAvailabilityStatus.UNAVAILABLE;
-  const isAvailable = status === DayAvailabilityStatus.AVAILABLE;
-
-  return {
-    dayOfWeek: day.dayOfWeek,
-    status,
-    startTime: isAvailable ? day.startTime : undefined,
-    endTime: isAvailable ? day.endTime : undefined,
-    positions: isAvailable ? (day.positions ?? []) : [],
-  };
-}
-/* eslint-enable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment */
+import { UpdateAvailabilityDto } from './dto/update-availability.dto';
 
 @Injectable()
 export class AvailabilityService {
@@ -48,39 +15,50 @@ export class AvailabilityService {
     private readonly availabilityModel: Model<AvailabilityDocument>,
   ) {}
 
-  async getMine(organizationId: string, employeeId: string) {
-    const existing = await this.availabilityModel
-      .findOne({ organizationId, employeeId })
-      .lean();
-    if (!existing) {
-      return { organizationId, employeeId, days: defaultDays() };
-    }
-    return { organizationId, employeeId, days: existing.days.map(sanitizeDay) };
+  // Every date the caller has set a preference for within the range — a date with no document
+  // simply hasn't been touched yet.
+  getMine(organizationId: string, employeeId: string, from: Date, to: Date) {
+    return this.availabilityModel
+      .find({ organizationId, employeeId, date: { $gte: from, $lte: to } })
+      .sort({ date: 1 });
   }
 
   upsertMine(
     organizationId: string,
     employeeId: string,
-    days: DayAvailabilityDto[],
+    dto: UpdateAvailabilityDto,
   ) {
+    const isAvailable = dto.status === AvailabilityStatus.AVAILABLE;
     return this.availabilityModel.findOneAndUpdate(
-      { organizationId, employeeId },
-      { organizationId, employeeId, days },
+      { organizationId, employeeId, date: dto.date },
+      {
+        organizationId,
+        employeeId,
+        date: dto.date,
+        status: dto.status,
+        startTime: isAvailable ? dto.startTime : undefined,
+        endTime: isAvailable ? dto.endTime : undefined,
+        positions: isAvailable ? (dto.positions ?? []) : [],
+      },
       { upsert: true, new: true },
     );
   }
 
-  // Every employee who has ever saved an availability pattern — someone who never touched the
-  // screen simply has no document and won't appear here, which is fine: the week-builder only
-  // cares about people who marked something. employeeId is populated for display; days are
-  // sanitized the same way getMine's are.
-  async findAllForOrg(organizationId: string) {
-    const records = await this.availabilityModel
-      .find({ organizationId })
-      .populate('employeeId', 'fullName role');
-    return records.map((record) => ({
-      employeeId: record.employeeId,
-      days: record.days.map(sanitizeDay),
-    }));
+  // Resets a date back to "not set" rather than leaving it pinned on some status.
+  deleteMine(organizationId: string, employeeId: string, date: Date) {
+    return this.availabilityModel.deleteOne({
+      organizationId,
+      employeeId,
+      date,
+    });
+  }
+
+  // Org-wide, owner/manager only — every entry in the range, for the week-builder to
+  // cross-reference who marked themselves available against the exact date being built.
+  findAllForOrg(organizationId: string, from: Date, to: Date) {
+    return this.availabilityModel
+      .find({ organizationId, date: { $gte: from, $lte: to } })
+      .populate('employeeId', 'fullName role')
+      .sort({ date: 1 });
   }
 }
