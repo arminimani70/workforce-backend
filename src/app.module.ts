@@ -11,6 +11,7 @@ import { SchedulingModule } from './operations/scheduling/scheduling.module';
 import { AvailabilityModule } from './operations/availability/availability.module';
 import { TasksModule } from './operations/tasks/tasks.module';
 import { OnboardingModule } from './hr/onboarding/onboarding.module';
+import { ChatModule } from './communication/chat/chat.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { OnboardingModule } from './hr/onboarding/onboarding.module';
     AvailabilityModule,
     TasksModule,
     OnboardingModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],

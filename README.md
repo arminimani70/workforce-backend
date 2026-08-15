@@ -100,6 +100,17 @@ Requires a running MongoDB instance (local `mongod`, Docker, or Atlas) reachable
   text/markdown-ish blob capped at 20,000 characters; upserts, so there's nothing to create up
   front). One guide per organization, not per employee — unlike Availability/Shift/Task, there's
   no per-user dimension here.
+- **communication/chat** — direct 1:1 messages between any two org members, no role
+  restriction and no group chat; a "conversation" is derived from `Message` documents rather
+  than stored as its own entity. `POST /messages` (`{ recipientId, text }`, recipient must be
+  in the same org), `GET /messages/conversations` (every person the caller has exchanged
+  messages with, each with the last message, its timestamp, and an unread count — newest
+  first), `GET /messages/unread-count` (`{ count }`, total unread across every conversation,
+  for a badge), `GET /messages/with/:employeeId` (the full thread with one coworker, oldest
+  first), `PATCH /messages/with/:employeeId/read` (marks every unread message from that
+  coworker as read — called when opening the thread). Text-only for now, capped at 5,000
+  characters; the schema has room for an attachment field for a future image/PDF/Word upload,
+  but nothing populates it yet.
 
 All non-auth routes require `Authorization: Bearer <accessToken>`. Routes marked
 "owner/manager only" are enforced by `RolesGuard` + `@Roles(...)` — an employee token gets a
@@ -108,7 +119,7 @@ All non-auth routes require `Authorization: Bearer <accessToken>`. Routes marked
 ## Planned modules (see [docs/PROJECT_SPEC.md](docs/PROJECT_SPEC.md))
 
 `operations/forms-checklists`,
-`communication/{chat,announcements,directory,help-desk}`,
+`communication/{announcements,directory,help-desk}`,
 `hr/{documents,time-off,recognition}`.
 
 ## Scripts
