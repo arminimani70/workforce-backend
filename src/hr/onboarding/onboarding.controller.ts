@@ -27,7 +27,7 @@ export class OnboardingController {
     return this.onboardingService.update(
       user.organizationId,
       user.userId,
-      dto.content,
+      dto.sections,
     );
   }
 }

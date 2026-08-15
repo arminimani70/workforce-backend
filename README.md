@@ -95,10 +95,12 @@ Requires a running MongoDB instance (local `mongod`, Docker, or Atlas) reachable
   populated), `PATCH /tasks/:id/status` (`pending`/`in_progress`/`done` — the assignee or
   owner/manager can update; anyone else gets a `403`).
 - **hr/onboarding** — `GET /onboarding` (any authenticated user — the org's onboarding guide;
-  `{ organizationId: '', content: '', updatedAt: null }` if the org hasn't written one yet, no
-  404), `PUT /onboarding` (owner/manager only — replaces the guide's `content`, a single plain-
-  text/markdown-ish blob capped at 20,000 characters; upserts, so there's nothing to create up
-  front). One guide per organization, not per employee — unlike Availability/Shift/Task, there's
+  `{ organizationId: '', sections: [], updatedAt: null }` if the org hasn't written one yet, no
+  404), `PUT /onboarding` (owner/manager only — replaces the guide's whole `sections` array:
+  `{ sections: [{ title, content }] }`, up to 100 sections, each title capped at 200 characters
+  and content at 20,000; upserts, so there's nothing to create up front). A guide is a list of
+  titled sections rather than one text blob, so the app can let someone search/browse it by
+  title. One guide per organization, not per employee — unlike Availability/Shift/Task, there's
   no per-user dimension here.
 - **communication/chat** — direct 1:1 messages between any two org members, no role
   restriction and no group chat; a "conversation" is derived from `Message` documents rather
