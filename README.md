@@ -128,6 +128,18 @@ Requires a running MongoDB instance (local `mongod`, Docker, or Atlas) reachable
   completed-items list for that section with `{ completedItems: string[] }`; storing the
   checked item text rather than an index so a completion record stays meaningful even if the
   template is edited later).
+- **operations/forms** — an org-wide catalog of ad hoc report types (e.g. "Damaged Product",
+  "Equipment Malfunction", "Urgent Supply Request") — unlike checklists these aren't tied to a
+  position or branch; any authenticated user can submit any of them, whenever something needs
+  reporting. `PUT /forms/templates` (owner/manager only — creates a new template, or updates
+  one in place when `{ id }` is included: `{ id?, title, fields: [{ label, type: 'text' |
+  'number' }] }`), `GET /forms/templates` (any authenticated user — the catalog to pick a form
+  from), `DELETE /forms/templates/:id` (owner/manager only). `POST /forms/submissions` (any
+  authenticated user — `{ formTemplateId, values: [{ label, value }] }`; each value is stored
+  as its own label+value snapshot, along with the template's title at that moment, so a
+  submission stays readable even if the template is edited or deleted afterward), `GET
+  /forms/submissions` (owner/manager only — every submission org-wide, newest first, employee
+  populated — the review/history log).
 
 All non-auth routes require `Authorization: Bearer <accessToken>`. Routes marked
 "owner/manager only" are enforced by `RolesGuard` + `@Roles(...)` — an employee token gets a
