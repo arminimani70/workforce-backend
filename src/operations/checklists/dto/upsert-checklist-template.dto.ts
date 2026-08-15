@@ -2,7 +2,7 @@ import {
   ArrayMaxSize,
   IsArray,
   IsEnum,
-  IsNotEmpty,
+  IsOptional,
   IsString,
   MaxLength,
 } from 'class-validator';
@@ -12,10 +12,11 @@ export class UpsertChecklistTemplateDto {
   @IsEnum(Position)
   position: Position;
 
+  // Blank/omitted means "every branch" for this position.
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @MaxLength(100)
-  jobSite: string;
+  jobSite?: string;
 
   @IsArray()
   @ArrayMaxSize(50)

@@ -8,7 +8,9 @@ export { Position };
 
 // One template per (position, branch) — what someone working that position at that branch
 // should do at the start and end of their shift. jobSite is free text, matching Shift.jobSite
-// (there's no Branch entity in the backend).
+// (there's no Branch entity in the backend). jobSite may be blank, meaning "every branch" for
+// that position — many orgs don't bother naming branches on shifts at all, so a blank-jobSite
+// template is what a shift with no jobSite of its own falls back to.
 @Schema({ timestamps: true })
 export class ChecklistTemplate {
   @Prop({
@@ -22,7 +24,7 @@ export class ChecklistTemplate {
   @Prop({ type: String, enum: Position, required: true })
   position: Position;
 
-  @Prop({ required: true, maxlength: 100 })
+  @Prop({ maxlength: 100, default: '' })
   jobSite: string;
 
   @Prop({ type: [String], default: [] })

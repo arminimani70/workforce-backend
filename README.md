@@ -113,13 +113,17 @@ Requires a running MongoDB instance (local `mongod`, Docker, or Atlas) reachable
   but nothing populates it yet.
 - **operations/checklists** — opening/closing duty lists, one template per (`position`,
   `jobSite`) combination — the same position can have a different checklist at a different
-  branch. `PUT /checklists/templates` (owner/manager only — upserts by `position` + `jobSite`:
-  `{ position, jobSite, openingItems: string[], closingItems: string[] }`), `GET
-  /checklists/templates` (owner/manager only — every template in the org). Completion is
-  tracked per shift, not per template, so it resets naturally each time someone works: `GET
-  /checklists/shift/:shiftId` (the shift's own employee, or owner/manager for oversight —
-  resolves the template matching that shift's `position`/`jobSite`, empty lists if none exists,
-  plus the current `openingCompletedItems`/`closingCompletedItems`), `PATCH
+  branch. `jobSite` is optional on a template: a blank `jobSite` is the position's default,
+  applied to any shift with that position — whether that shift has no branch of its own, or a
+  branch that has no template of its own. `PUT /checklists/templates` (owner/manager only —
+  upserts by `position` + `jobSite`: `{ position, jobSite?, openingItems: string[],
+  closingItems: string[] }`), `GET /checklists/templates` (owner/manager only — every template
+  in the org). Completion is tracked per shift, not per template, so it resets naturally each
+  time someone works: `GET /checklists/shift/:shiftId` (the shift's own employee, or
+  owner/manager for oversight — resolves the best-matching template for that shift: its own
+  branch first if it has one and a template exists for it, then the position's blank-branch
+  default, then empty lists if neither exists; branch matching is case/whitespace-insensitive
+  since it's typed independently in two different places), `PATCH
   /checklists/shift/:shiftId/opening` / `/closing` (shift's own employee only — replaces the
   completed-items list for that section with `{ completedItems: string[] }`; storing the
   checked item text rather than an index so a completion record stays meaningful even if the

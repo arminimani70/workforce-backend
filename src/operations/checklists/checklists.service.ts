@@ -4,6 +4,7 @@ import { Model } from 'mongoose';
 import {
   ChecklistTemplate,
   ChecklistTemplateDocument,
+  Position,
 } from './schemas/checklist-template.schema';
 import {
   ChecklistCompletion,
@@ -30,17 +31,28 @@ export class ChecklistsService {
   ) {}
 
   upsertTemplate(organizationId: string, dto: UpsertChecklistTemplateDto) {
+    const jobSite = dto.jobSite?.trim() ?? '';
     return this.templateModel.findOneAndUpdate(
-      { organizationId, position: dto.position, jobSite: dto.jobSite },
+      { organizationId, position: dto.position, jobSite },
       {
         organizationId,
         position: dto.position,
-        jobSite: dto.jobSite,
+        jobSite,
         openingItems: dto.openingItems,
         closingItems: dto.closingItems,
       },
       { upsert: true, new: true },
     );
+  }
+
+  // The blank-jobSite template for a position — what a shift with no branch of its own falls
+  // back to, and the last resort when a shift's specific branch has no template of its own.
+  private findGenericTemplate(organizationId: string, position: Position) {
+    return this.templateModel.findOne({
+      organizationId,
+      position,
+      jobSite: '',
+    });
   }
 
   findAllTemplates(organizationId: string) {
@@ -68,20 +80,29 @@ export class ChecklistsService {
       );
     }
 
+    const resolveTemplate = async () => {
+      if (!shift.position) return null;
+
+      // A shift with its own branch tries that exact branch first (case/whitespace-insensitive,
+      // since jobSite is free text typed independently when scheduling a shift vs. defining a
+      // template) before falling back to the position's blank-branch default.
+      if (shift.jobSite && shift.jobSite.trim()) {
+        const branchSpecific = await this.templateModel.findOne({
+          organizationId,
+          position: shift.position,
+          jobSite: {
+            $regex: `^${escapeRegExp(shift.jobSite.trim())}$`,
+            $options: 'i',
+          },
+        });
+        if (branchSpecific) return branchSpecific;
+      }
+
+      return this.findGenericTemplate(organizationId, shift.position);
+    };
+
     const [template, completion] = await Promise.all([
-      shift.position && shift.jobSite
-        ? this.templateModel.findOne({
-            organizationId,
-            position: shift.position,
-            // Case/whitespace-insensitive: jobSite is free text typed independently when
-            // scheduling a shift vs. defining a template, so "Downtown" and "downtown " should
-            // still match rather than silently missing each other.
-            jobSite: {
-              $regex: `^${escapeRegExp(shift.jobSite.trim())}$`,
-              $options: 'i',
-            },
-          })
-        : null,
+      resolveTemplate(),
       this.completionModel.findOne({ organizationId, shiftId }),
     ]);
 
