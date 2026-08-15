@@ -12,6 +12,7 @@ import { AvailabilityModule } from './operations/availability/availability.modul
 import { TasksModule } from './operations/tasks/tasks.module';
 import { OnboardingModule } from './hr/onboarding/onboarding.module';
 import { ChatModule } from './communication/chat/chat.module';
+import { ChecklistsModule } from './operations/checklists/checklists.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { ChatModule } from './communication/chat/chat.module';
     TasksModule,
     OnboardingModule,
     ChatModule,
+    ChecklistsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

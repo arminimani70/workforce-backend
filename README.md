@@ -111,6 +111,19 @@ Requires a running MongoDB instance (local `mongod`, Docker, or Atlas) reachable
   coworker as read — called when opening the thread). Text-only for now, capped at 5,000
   characters; the schema has room for an attachment field for a future image/PDF/Word upload,
   but nothing populates it yet.
+- **operations/checklists** — opening/closing duty lists, one template per (`position`,
+  `jobSite`) combination — the same position can have a different checklist at a different
+  branch. `PUT /checklists/templates` (owner/manager only — upserts by `position` + `jobSite`:
+  `{ position, jobSite, openingItems: string[], closingItems: string[] }`), `GET
+  /checklists/templates` (owner/manager only — every template in the org). Completion is
+  tracked per shift, not per template, so it resets naturally each time someone works: `GET
+  /checklists/shift/:shiftId` (the shift's own employee, or owner/manager for oversight —
+  resolves the template matching that shift's `position`/`jobSite`, empty lists if none exists,
+  plus the current `openingCompletedItems`/`closingCompletedItems`), `PATCH
+  /checklists/shift/:shiftId/opening` / `/closing` (shift's own employee only — replaces the
+  completed-items list for that section with `{ completedItems: string[] }`; storing the
+  checked item text rather than an index so a completion record stays meaningful even if the
+  template is edited later).
 
 All non-auth routes require `Authorization: Bearer <accessToken>`. Routes marked
 "owner/manager only" are enforced by `RolesGuard` + `@Roles(...)` — an employee token gets a
@@ -118,7 +131,6 @@ All non-auth routes require `Authorization: Bearer <accessToken>`. Routes marked
 
 ## Planned modules (see [docs/PROJECT_SPEC.md](docs/PROJECT_SPEC.md))
 
-`operations/forms-checklists`,
 `communication/{announcements,directory,help-desk}`,
 `hr/{documents,time-off,recognition}`.
 

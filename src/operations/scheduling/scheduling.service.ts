@@ -53,6 +53,20 @@ export class SchedulingService {
     return this.shiftModel.find({ organizationId }).sort({ startTime: 1 });
   }
 
+  async findOne(organizationId: string, shiftId: string) {
+    if (!isValidObjectId(shiftId)) {
+      throw new NotFoundException('Shift not found');
+    }
+    const shift = await this.shiftModel.findOne({
+      _id: shiftId,
+      organizationId,
+    });
+    if (!shift) {
+      throw new NotFoundException('Shift not found');
+    }
+    return shift;
+  }
+
   // Every approved shift in the org starting in [from, to], with the employee's name/role
   // populated — this is what powers "who else is working today" for any authenticated user,
   // not just owner/manager. Takes the exact window rather than a bare date so the caller's
