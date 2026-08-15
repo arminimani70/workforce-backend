@@ -13,6 +13,12 @@ import { UpsertChecklistTemplateDto } from './dto/upsert-checklist-template.dto'
 import { SchedulingService } from '../scheduling/scheduling.service';
 import { UserRole } from '../../users/schemas/user.schema';
 
+// jobSite is free text, so it can contain regex metacharacters that would otherwise change
+// what the case-insensitive template lookup below actually matches.
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 @Injectable()
 export class ChecklistsService {
   constructor(
@@ -67,7 +73,13 @@ export class ChecklistsService {
         ? this.templateModel.findOne({
             organizationId,
             position: shift.position,
-            jobSite: shift.jobSite,
+            // Case/whitespace-insensitive: jobSite is free text typed independently when
+            // scheduling a shift vs. defining a template, so "Downtown" and "downtown " should
+            // still match rather than silently missing each other.
+            jobSite: {
+              $regex: `^${escapeRegExp(shift.jobSite.trim())}$`,
+              $options: 'i',
+            },
           })
         : null,
       this.completionModel.findOne({ organizationId, shiftId }),
