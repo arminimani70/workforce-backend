@@ -142,6 +142,17 @@ Requires a running MongoDB instance (local `mongod`, Docker, or Atlas) reachable
   submission stays readable even if the template is edited or deleted afterward), `GET
   /forms/submissions` (owner/manager only — every submission org-wide, newest first, employee
   populated — the review/history log).
+- **operations/branches** — the org-wide, canonical list of physical work locations (name +
+  GPS point + geofence radius). `Shift.jobSite` and `ChecklistTemplate.jobSite` stay plain-text
+  snapshots of a branch's name rather than a reference to this collection — same
+  snapshot-not-reference pattern used elsewhere — so renaming or deleting a branch never
+  corrupts historical shifts or checklist assignments. `PUT /branches` (owner/manager only —
+  creates a new branch, or updates one in place when `{ id }` is included: `{ id?, name, lat,
+  lng, radiusMeters? }`, `radiusMeters` defaults to 100 and must be between 10 and 5000),
+  `GET /branches` (any authenticated user — populates branch pickers and resolves the geofence
+  for the clock-in map), `DELETE /branches/:id` (owner/manager only). Geofence enforcement
+  itself (warning an employee they're far from their branch when clocking in) is entirely
+  client-side — this module only stores and serves the branch data.
 
 All non-auth routes require `Authorization: Bearer <accessToken>`. Routes marked
 "owner/manager only" are enforced by `RolesGuard` + `@Roles(...)` — an employee token gets a

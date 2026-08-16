@@ -14,6 +14,7 @@ import { OnboardingModule } from './hr/onboarding/onboarding.module';
 import { ChatModule } from './communication/chat/chat.module';
 import { ChecklistsModule } from './operations/checklists/checklists.module';
 import { FormsModule } from './operations/forms/forms.module';
+import { BranchesModule } from './operations/branches/branches.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { FormsModule } from './operations/forms/forms.module';
     ChatModule,
     ChecklistsModule,
     FormsModule,
+    BranchesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
