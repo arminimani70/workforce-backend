@@ -19,7 +19,9 @@ export class OnboardingService {
     if (!existing) {
       return { organizationId, sections: [], updatedAt: null };
     }
-    return existing;
+    // A document saved before the single-content-blob -> titled-sections migration won't have
+    // a sections array yet — default it so callers never see undefined here.
+    return { ...existing, sections: existing.sections ?? [] };
   }
 
   update(
