@@ -19,6 +19,10 @@ export class ChecklistItemStatus {
   // the item is marked, so it's only ever set alongside an existing done/not-done value.
   @Prop()
   photoUrl?: string;
+
+  // Optional free-text note, same "attached after the item is marked" convention as photoUrl.
+  @Prop({ maxlength: 1000 })
+  note?: string;
 }
 
 // The one live, shared "clipboard" per (position, branch) — not per employee, not per day.

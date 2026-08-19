@@ -39,4 +39,10 @@ export class UpdateChecklistItemDto {
   })
   @MaxLength(400_000)
   photoUrl?: string;
+
+  // Optional free-text note, same "attached after the item is marked" convention as photoUrl.
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  note?: string;
 }

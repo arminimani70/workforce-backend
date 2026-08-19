@@ -39,6 +39,12 @@ export class ChecklistSubmission {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true, index: true })
   submittedBy: Types.ObjectId;
 
+  // A hand-drawn signature captured at submit time, confirming this round — stored as SVG path
+  // data (one or more "M x y L x y ..." subpaths), not a raster image, since the app draws it
+  // with react-native-svg on both capture and review rather than rasterizing to a PNG.
+  @Prop({ required: true, maxlength: 20_000 })
+  signature: string;
+
   // Not @Prop-decorated — added by { timestamps: true }; declared so TS knows about it.
   createdAt: Date;
 }

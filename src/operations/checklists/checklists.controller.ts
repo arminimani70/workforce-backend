@@ -17,6 +17,7 @@ import { ChecklistsService } from './checklists.service';
 import { UpsertChecklistTemplateDto } from './dto/upsert-checklist-template.dto';
 import { ResolveChecklistDto } from './dto/resolve-checklist.dto';
 import { UpdateChecklistItemDto } from './dto/update-checklist-item.dto';
+import { SubmitChecklistSectionDto } from './dto/submit-checklist-section.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('checklists')
@@ -71,6 +72,7 @@ export class ChecklistsController {
       dto.item,
       dto.done,
       dto.photoUrl,
+      dto.note,
     );
   }
 
@@ -88,13 +90,14 @@ export class ChecklistsController {
       dto.item,
       dto.done,
       dto.photoUrl,
+      dto.note,
     );
   }
 
   @Patch('current/opening/submit')
   submitOpening(
     @CurrentUser() user: AuthenticatedUser,
-    @Body() dto: ResolveChecklistDto,
+    @Body() dto: SubmitChecklistSectionDto,
   ) {
     return this.checklistsService.submitSection(
       user.organizationId,
@@ -102,13 +105,14 @@ export class ChecklistsController {
       dto.position,
       dto.jobSite?.trim() ?? '',
       'opening',
+      dto.signature,
     );
   }
 
   @Patch('current/closing/submit')
   submitClosing(
     @CurrentUser() user: AuthenticatedUser,
-    @Body() dto: ResolveChecklistDto,
+    @Body() dto: SubmitChecklistSectionDto,
   ) {
     return this.checklistsService.submitSection(
       user.organizationId,
@@ -116,6 +120,7 @@ export class ChecklistsController {
       dto.position,
       dto.jobSite?.trim() ?? '',
       'closing',
+      dto.signature,
     );
   }
 }

@@ -166,23 +166,26 @@ Requires a running MongoDB instance (local `mongod`, Docker, or Atlas) reachable
   template for that position+branch plus whatever's currently marked on the shared sheet).
   Every item's status is explicit — done or not done — never a silent "unchecked means not
   done": `PATCH /checklists/current/opening` / `/closing` (`{ position, jobSite?, item, done,
-  photoUrl? }` — sets one item's status on the shared sheet, storing the item text rather than
-  an index so a record stays meaningful even if the template is edited later; also stamps
+  photoUrl?, note? }` — sets one item's status on the shared sheet, storing the item text rather
+  than an index so a record stays meaningful even if the template is edited later; also stamps
   `lastUpdatedBy`, informational only). `photoUrl` is an optional proof-of-completion photo — a
   base64 data URI like `User.avatarUrl`, capped smaller at 400,000 characters since it should
   already be resized/compressed client-side — attached in a follow-up `PATCH` after the item is
   marked, re-sending the same `done` value alongside the new `photoUrl`. The backend accepts a
   `photoUrl` regardless of the template's `allowPhoto` setting — the app is what decides whether
-  to offer the camera button, based on that flag.
+  to offer the camera button, based on that flag. `note` is an optional free-text note (capped at
+  1,000 characters), same "attached after the item is marked" convention.
 
   Once every item in a section is answered, anyone can submit it: `PATCH
-  /checklists/current/opening/submit` / `/closing/submit` (`{ position, jobSite? }` — `400`s if
-  any item is still unanswered or the section has no items at all). Submitting **archives that
-  section's current state as a new, independent `ChecklistSubmission` row** (so history keeps
-  every round, from whoever filled it) **and resets just that section on the shared sheet back
-  to blank**, ready for the next person — the sheet itself is never "done", only ever submitted
-  and reused. `GET /checklists/submissions` (owner/manager only — every submitted round ever,
-  newest first, employee populated) is the review list.
+  /checklists/current/opening/submit` / `/closing/submit` (`{ position, jobSite?, signature }` —
+  `400`s if any item is still unanswered or the section has no items at all; `signature` is
+  required — SVG path data for a hand-drawn signature, capped at 20,000 characters, not a raster
+  image). Submitting **archives that section's current state (statuses and signature) as a new,
+  independent `ChecklistSubmission` row** (so history keeps every round, from whoever filled it)
+  **and resets just that section on the shared sheet back to blank**, ready for the next
+  person — the sheet itself is never "done", only ever submitted and reused. `GET
+  /checklists/submissions` (owner/manager only — every submitted round ever, newest first,
+  employee populated) is the review list.
 - **operations/forms** — an org-wide catalog of ad hoc report types (e.g. "Damaged Product",
   "Equipment Malfunction", "Urgent Supply Request") — unlike checklists these aren't tied to a
   position or branch; any authenticated user can submit any of them, whenever something needs
