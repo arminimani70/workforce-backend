@@ -16,7 +16,7 @@ export const OnboardingSectionSchema =
   SchemaFactory.createForClass(OnboardingSection);
 
 // One guide per organization — owner/manager write it, every member reads it. Unlike
-// Availability/Shift/Task, this has no per-employee dimension, so organizationId alone is
+// Availability/Shift, this has no per-employee dimension, so organizationId alone is
 // the lookup key (and is unique, since there's only ever one guide per org). A guide is a
 // list of titled sections rather than one text blob, so it can be searched/browsed by title.
 @Schema({ timestamps: true })

@@ -9,7 +9,6 @@ import { OrganizationsModule } from './organizations/organizations.module';
 import { TimeClockModule } from './operations/time-clock/time-clock.module';
 import { SchedulingModule } from './operations/scheduling/scheduling.module';
 import { AvailabilityModule } from './operations/availability/availability.module';
-import { TasksModule } from './operations/tasks/tasks.module';
 import { OnboardingModule } from './hr/onboarding/onboarding.module';
 import { ChatModule } from './communication/chat/chat.module';
 import { ChecklistsModule } from './operations/checklists/checklists.module';
@@ -33,7 +32,6 @@ import { WastageModule } from './operations/wastage/wastage.module';
     TimeClockModule,
     SchedulingModule,
     AvailabilityModule,
-    TasksModule,
     OnboardingModule,
     ChatModule,
     ChecklistsModule,

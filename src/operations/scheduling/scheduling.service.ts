@@ -7,7 +7,6 @@ import { InjectModel } from '@nestjs/mongoose';
 import { isValidObjectId, Model, QueryFilter } from 'mongoose';
 import { Shift, ShiftApproval, ShiftDocument } from './schemas/shift.schema';
 import { CreateShiftDto } from './dto/create-shift.dto';
-import { Position } from '../../common/enums/position.enum';
 
 @Injectable()
 export class SchedulingService {
@@ -81,27 +80,6 @@ export class SchedulingService {
       })
       .populate('employeeId', 'fullName role avatarUrl')
       .sort({ startTime: 1 });
-  }
-
-  // Used by Tasks to auto-assign: who is approved to work this position on this calendar day?
-  // Returns null if nobody is, so the caller can decide how to report that.
-  async findEmployeeForPositionOnDate(
-    organizationId: string,
-    position: Position,
-    date: Date,
-  ): Promise<string | null> {
-    const dayStart = new Date(date);
-    dayStart.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(date);
-    dayEnd.setHours(23, 59, 59, 999);
-
-    const shift = await this.shiftModel.findOne({
-      organizationId,
-      position,
-      approval: ShiftApproval.APPROVED,
-      startTime: { $gte: dayStart, $lte: dayEnd },
-    });
-    return shift ? shift.employeeId.toString() : null;
   }
 
   private async setApproval(

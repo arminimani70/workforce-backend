@@ -127,22 +127,13 @@ Requires a running MongoDB instance (local `mongod`, Docker, or Atlas) reachable
   /shifts/edit-requests/:id/cancel` (requester only, while still `pending`), `PATCH
   /shifts/edit-requests/:id/approve` (owner/manager only — applies `newStartTime`/`newEndTime`
   to the actual shift) / `/reject` (leaves the shift untouched).
-- **operations/tasks** — `POST /tasks` (owner/manager only — assign directly with
-  `assignedTo`, or omit it and give `position` + `dueDate` instead: the server finds whoever
-  has an *approved* shift for that position on that date and assigns them; 404s if nobody
-  does), `POST /tasks/batch` (owner/manager only — same title/description across multiple
-  `dueDates`, each resolved independently by `position`, so different days can land on
-  different people; returns one result per date noting whether it was created), `GET /tasks/me`
-  (the caller's own tasks), `GET /tasks` (every task in the org, owner/manager only, employee
-  populated), `PATCH /tasks/:id/status` (`pending`/`in_progress`/`done` — the assignee or
-  owner/manager can update; anyone else gets a `403`).
 - **hr/onboarding** — `GET /onboarding` (any authenticated user — the org's onboarding guide;
   `{ organizationId: '', sections: [], updatedAt: null }` if the org hasn't written one yet, no
   404), `PUT /onboarding` (owner/manager only — replaces the guide's whole `sections` array:
   `{ sections: [{ title, content }] }`, up to 100 sections, each title capped at 200 characters
   and content at 20,000; upserts, so there's nothing to create up front). A guide is a list of
   titled sections rather than one text blob, so the app can let someone search/browse it by
-  title. One guide per organization, not per employee — unlike Availability/Shift/Task, there's
+  title. One guide per organization, not per employee — unlike Availability/Shift, there's
   no per-user dimension here.
 - **communication/chat** — direct 1:1 messages between any two org members, no role
   restriction and no group chat; a "conversation" is derived from `Message` documents rather
