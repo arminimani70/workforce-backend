@@ -1,6 +1,7 @@
 import {
   ArrayMaxSize,
   IsArray,
+  IsBoolean,
   IsEnum,
   IsOptional,
   IsString,
@@ -32,4 +33,8 @@ export class UpsertChecklistTemplateDto {
   @ArrayMaxSize(50)
   @IsString({ each: true })
   closingItems: string[];
+
+  @IsOptional()
+  @IsBoolean()
+  allowPhoto?: boolean;
 }

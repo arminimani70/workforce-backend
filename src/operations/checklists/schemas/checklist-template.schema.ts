@@ -37,6 +37,11 @@ export class ChecklistTemplate {
 
   @Prop({ type: [String], default: [] })
   closingItems: string[];
+
+  // Whether this checklist's items may carry a proof-of-completion photo. Off by default — a
+  // manager opts a checklist into photos rather than every checklist growing camera buttons.
+  @Prop({ default: false })
+  allowPhoto: boolean;
 }
 
 export const ChecklistTemplateSchema =

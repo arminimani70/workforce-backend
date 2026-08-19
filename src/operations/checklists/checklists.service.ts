@@ -45,6 +45,7 @@ export class ChecklistsService {
         title: dto.title?.trim() ?? '',
         openingItems: dto.openingItems,
         closingItems: dto.closingItems,
+        allowPhoto: dto.allowPhoto ?? false,
       },
       { upsert: true, new: true },
     );
@@ -107,6 +108,7 @@ export class ChecklistsService {
       closingItems: template?.closingItems ?? [],
       openingStatuses: completion?.openingStatuses ?? [],
       closingStatuses: completion?.closingStatuses ?? [],
+      allowPhoto: template?.allowPhoto ?? false,
     };
   }
 

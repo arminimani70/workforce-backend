@@ -151,11 +151,13 @@ Requires a running MongoDB instance (local `mongod`, Docker, or Atlas) reachable
   branch. `jobSite` is optional on a template: a blank `jobSite` is the position's default,
   applied to any pick of that position with no more specific branch template of its own. A
   template also carries an optional `title` (e.g. "Morning Opening — Front Desk") so the same
-  position can read differently at different branches. `PUT /checklists/templates`
+  position can read differently at different branches. A template also carries `allowPhoto`
+  (boolean, default `false`) — off unless a manager opts a checklist into photo attachments, so
+  ordinary checklists don't grow camera buttons unasked. `PUT /checklists/templates`
   (owner/manager only — upserts by `position` + `jobSite`: `{ position, jobSite?, title?,
-  openingItems: string[], closingItems: string[] }`), `GET /checklists/templates` (any
-  authenticated user — every template in the org, doubling as the catalog of checklist "forms"
-  to browse and pick from).
+  openingItems: string[], closingItems: string[], allowPhoto? }`), `GET /checklists/templates`
+  (any authenticated user — every template in the org, doubling as the catalog of checklist
+  "forms" to browse and pick from).
 
   Filling one out is **not tied to a shift, a day, or one employee** — it's one live, shared
   sheet per (`position`, `jobSite`), since several different people can hold the same position
@@ -169,7 +171,9 @@ Requires a running MongoDB instance (local `mongod`, Docker, or Atlas) reachable
   `lastUpdatedBy`, informational only). `photoUrl` is an optional proof-of-completion photo — a
   base64 data URI like `User.avatarUrl`, capped smaller at 400,000 characters since it should
   already be resized/compressed client-side — attached in a follow-up `PATCH` after the item is
-  marked, re-sending the same `done` value alongside the new `photoUrl`.
+  marked, re-sending the same `done` value alongside the new `photoUrl`. The backend accepts a
+  `photoUrl` regardless of the template's `allowPhoto` setting — the app is what decides whether
+  to offer the camera button, based on that flag.
 
   Once every item in a section is answered, anyone can submit it: `PATCH
   /checklists/current/opening/submit` / `/closing/submit` (`{ position, jobSite? }` — `400`s if
