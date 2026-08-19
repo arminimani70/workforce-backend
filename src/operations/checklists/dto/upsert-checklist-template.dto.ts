@@ -18,6 +18,11 @@ export class UpsertChecklistTemplateDto {
   @MaxLength(100)
   jobSite?: string;
 
+  @IsOptional()
+  @IsString()
+  @MaxLength(150)
+  title?: string;
+
   @IsArray()
   @ArrayMaxSize(50)
   @IsString({ each: true })

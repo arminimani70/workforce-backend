@@ -27,6 +27,11 @@ export class ChecklistTemplate {
   @Prop({ maxlength: 100, default: '' })
   jobSite: string;
 
+  // Shown as the checklist's heading instead of a generic "Opening/Closing Checklist" — lets a
+  // branch's template read as, say, "Morning Opening — Front Desk" instead of being anonymous.
+  @Prop({ maxlength: 150, default: '' })
+  title: string;
+
   @Prop({ type: [String], default: [] })
   openingItems: string[];
 

@@ -1,8 +1,11 @@
-import { ArrayMaxSize, IsArray, IsString } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsString, MaxLength } from 'class-validator';
 
 export class UpdateCompletionDto {
-  @IsArray()
-  @ArrayMaxSize(50)
-  @IsString({ each: true })
-  completedItems: string[];
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(500)
+  item: string;
+
+  @IsBoolean()
+  done: boolean;
 }

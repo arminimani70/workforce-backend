@@ -15,6 +15,8 @@ import { ChatModule } from './communication/chat/chat.module';
 import { ChecklistsModule } from './operations/checklists/checklists.module';
 import { FormsModule } from './operations/forms/forms.module';
 import { BranchesModule } from './operations/branches/branches.module';
+import { StockModule } from './operations/stock/stock.module';
+import { WastageModule } from './operations/wastage/wastage.module';
 
 @Module({
   imports: [
@@ -37,6 +39,8 @@ import { BranchesModule } from './operations/branches/branches.module';
     ChecklistsModule,
     FormsModule,
     BranchesModule,
+    StockModule,
+    WastageModule,
   ],
   controllers: [AppController],
   providers: [AppService],

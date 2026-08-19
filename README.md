@@ -159,19 +159,20 @@ Requires a running MongoDB instance (local `mongod`, Docker, or Atlas) reachable
   `jobSite`) combination — the same position can have a different checklist at a different
   branch. `jobSite` is optional on a template: a blank `jobSite` is the position's default,
   applied to any shift with that position — whether that shift has no branch of its own, or a
-  branch that has no template of its own. `PUT /checklists/templates` (owner/manager only —
-  upserts by `position` + `jobSite`: `{ position, jobSite?, openingItems: string[],
-  closingItems: string[] }`), `GET /checklists/templates` (owner/manager only — every template
-  in the org). Completion is tracked per shift, not per template, so it resets naturally each
-  time someone works: `GET /checklists/shift/:shiftId` (the shift's own employee, or
-  owner/manager for oversight — resolves the best-matching template for that shift: its own
-  branch first if it has one and a template exists for it, then the position's blank-branch
-  default, then empty lists if neither exists; branch matching is case/whitespace-insensitive
-  since it's typed independently in two different places), `PATCH
-  /checklists/shift/:shiftId/opening` / `/closing` (shift's own employee only — replaces the
-  completed-items list for that section with `{ completedItems: string[] }`; storing the
-  checked item text rather than an index so a completion record stays meaningful even if the
-  template is edited later).
+  branch that has no template of its own. A template also carries an optional `title` (e.g.
+  "Morning Opening — Front Desk") so the same position can read differently at different
+  branches. `PUT /checklists/templates` (owner/manager only — upserts by `position` + `jobSite`:
+  `{ position, jobSite?, title?, openingItems: string[], closingItems: string[] }`), `GET
+  /checklists/templates` (owner/manager only — every template in the org). Completion is
+  tracked per shift, not per template, so it resets naturally each time someone works, and every
+  item's status is explicit — done or not done — never a silent "unchecked means not done":
+  `GET /checklists/shift/:shiftId` (the shift's own employee, or owner/manager for oversight —
+  resolves the best-matching template for that shift the same way as before, and returns
+  `openingStatuses`/`closingStatuses: [{ item, done }]` reflecting only the items answered so
+  far; an item absent from the array simply hasn't been marked either way yet), `PATCH
+  /checklists/shift/:shiftId/opening` / `/closing` (shift's own employee only — sets one item's
+  status: `{ item: string, done: boolean }`; storing the item text rather than an index so a
+  completion record stays meaningful even if the template is edited later).
 - **operations/forms** — an org-wide catalog of ad hoc report types (e.g. "Damaged Product",
   "Equipment Malfunction", "Urgent Supply Request") — unlike checklists these aren't tied to a
   position or branch; any authenticated user can submit any of them, whenever something needs
@@ -195,6 +196,32 @@ Requires a running MongoDB instance (local `mongod`, Docker, or Atlas) reachable
   for the clock-in map), `DELETE /branches/:id` (owner/manager only). Geofence enforcement
   itself (warning an employee they're far from their branch when clocking in) is entirely
   client-side — this module only stores and serves the branch data.
+- **operations/stock** — manager-built, named product-count lists, one branch per list but any
+  number of lists per branch (e.g. "Bar Stock" and "Kitchen Stock" both at the same branch). A
+  manager only fills in `productName`/`unit` per row; an employee submitting only ever enters a
+  quantity against each predefined row — they can't add, remove, or rename products. `PUT
+  /stock/templates` (owner/manager only — creates a new list, or updates one in place when
+  `{ id }` is included: `{ id?, jobSite, title, items: [{ productName, unit }] }`; no two lists
+  at the same branch may share a title), `GET /stock/templates` (any authenticated user — the
+  catalog to pick a list from, grouped by branch on the client), `DELETE /stock/templates/:id`
+  (owner/manager only). `POST /stock/submissions` (any authenticated user — `{ stockTemplateId,
+  quantities: [{ productName, quantity }] }`; the server rejects anything that doesn't cover
+  exactly the template's current product set — no missing or extra rows — then snapshots the
+  list's title/branch and each row's productName/unit/quantity, so a submission stays readable
+  even if the template is later edited or deleted), `GET /stock/submissions` (owner/manager
+  only — every stock count ever submitted, newest first, employee populated).
+- **operations/wastage** — reporting damaged/expired/spilled product. `reasons` is an org-wide,
+  manager-editable catalog (e.g. "Expired", "Damaged", "Spilled") that populates the reason
+  picker on the submission form: `PUT /wastage/reasons` (owner/manager only — creates a new
+  reason, or renames one in place when `{ id }` is included: `{ id?, label }`), `GET
+  /wastage/reasons` (any authenticated user), `DELETE /wastage/reasons/:id` (owner/manager
+  only). A wastage report itself picks `jobSite` from the branch catalog and `reason` from this
+  catalog — both stored as plain-text snapshots, same convention as `Shift.jobSite` — but
+  `productName`/`amount` are always free text the employee types by hand, since there's no
+  fixed product catalog to pick from (unlike stock's manager-built lists): `POST
+  /wastage/entries` (any authenticated user — `{ jobSite, reason, productName, amount }`), `GET
+  /wastage/entries` (owner/manager only — every wastage report ever submitted, newest first,
+  employee populated).
 
 All non-auth routes require `Authorization: Bearer <accessToken>`. Routes marked
 "owner/manager only" are enforced by `RolesGuard` + `@Roles(...)` — an employee token gets a

@@ -38,6 +38,7 @@ export class ChecklistsService {
         organizationId,
         position: dto.position,
         jobSite,
+        title: dto.title?.trim() ?? '',
         openingItems: dto.openingItems,
         closingItems: dto.closingItems,
       },
@@ -110,19 +111,23 @@ export class ChecklistsService {
       shiftId,
       position: shift.position ?? null,
       jobSite: shift.jobSite ?? null,
+      title: template?.title || null,
       openingItems: template?.openingItems ?? [],
       closingItems: template?.closingItems ?? [],
-      openingCompletedItems: completion?.openingCompletedItems ?? [],
-      closingCompletedItems: completion?.closingCompletedItems ?? [],
+      openingStatuses: completion?.openingStatuses ?? [],
+      closingStatuses: completion?.closingStatuses ?? [],
     };
   }
 
+  // Sets one item's explicit done/not-done status — matches the checklist screen's
+  // tap-one-item-at-a-time interaction, rather than requiring the whole section be resent.
   async updateCompletion(
     organizationId: string,
     employeeId: string,
     shiftId: string,
     section: 'opening' | 'closing',
-    completedItems: string[],
+    item: string,
+    done: boolean,
   ) {
     const shift = await this.schedulingService.findOne(organizationId, shiftId);
     if (shift.employeeId.toString() !== employeeId) {
@@ -131,11 +136,23 @@ export class ChecklistsService {
       );
     }
 
-    const field =
-      section === 'opening' ? 'openingCompletedItems' : 'closingCompletedItems';
+    const field = section === 'opening' ? 'openingStatuses' : 'closingStatuses';
+
+    const updated = await this.completionModel.findOneAndUpdate(
+      { organizationId, shiftId, [`${field}.item`]: item },
+      { $set: { [`${field}.$.done`]: done } },
+      { new: true },
+    );
+    if (updated) {
+      return updated;
+    }
+
     return this.completionModel.findOneAndUpdate(
       { organizationId, shiftId },
-      { organizationId, shiftId, employeeId, [field]: completedItems },
+      {
+        $setOnInsert: { organizationId, shiftId, employeeId },
+        $push: { [field]: { item, done } },
+      },
       { upsert: true, new: true },
     );
   }

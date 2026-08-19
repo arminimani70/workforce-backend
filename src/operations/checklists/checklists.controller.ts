@@ -61,7 +61,8 @@ export class ChecklistsController {
       user.userId,
       shiftId,
       'opening',
-      dto.completedItems,
+      dto.item,
+      dto.done,
     );
   }
 
@@ -76,7 +77,8 @@ export class ChecklistsController {
       user.userId,
       shiftId,
       'closing',
-      dto.completedItems,
+      dto.item,
+      dto.done,
     );
   }
 }
