@@ -14,6 +14,11 @@ export class ChecklistItemStatus {
 
   @Prop({ required: true })
   done: boolean;
+
+  // Optional proof-of-completion photo, a base64 data URI like User.avatarUrl — attached after
+  // the item is marked, so it's only ever set alongside an existing done/not-done value.
+  @Prop()
+  photoUrl?: string;
 }
 
 // The one live, shared "clipboard" per (position, branch) — not per employee, not per day.

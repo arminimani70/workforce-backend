@@ -153,8 +153,9 @@ Requires a running MongoDB instance (local `mongod`, Docker, or Atlas) reachable
   template also carries an optional `title` (e.g. "Morning Opening — Front Desk") so the same
   position can read differently at different branches. `PUT /checklists/templates`
   (owner/manager only — upserts by `position` + `jobSite`: `{ position, jobSite?, title?,
-  openingItems: string[], closingItems: string[] }`), `GET /checklists/templates` (owner/manager
-  only — every template in the org).
+  openingItems: string[], closingItems: string[] }`), `GET /checklists/templates` (any
+  authenticated user — every template in the org, doubling as the catalog of checklist "forms"
+  to browse and pick from).
 
   Filling one out is **not tied to a shift, a day, or one employee** — it's one live, shared
   sheet per (`position`, `jobSite`), since several different people can hold the same position
@@ -162,10 +163,13 @@ Requires a running MongoDB instance (local `mongod`, Docker, or Atlas) reachable
   /checklists/current?position=&jobSite=` (any authenticated user — resolves the best-matching
   template for that position+branch plus whatever's currently marked on the shared sheet).
   Every item's status is explicit — done or not done — never a silent "unchecked means not
-  done": `PATCH /checklists/current/opening` / `/closing` (`{ position, jobSite?, item, done }`
-  — sets one item's status on the shared sheet, storing the item text rather than an index so a
-  record stays meaningful even if the template is edited later; also stamps `lastUpdatedBy`,
-  informational only).
+  done": `PATCH /checklists/current/opening` / `/closing` (`{ position, jobSite?, item, done,
+  photoUrl? }` — sets one item's status on the shared sheet, storing the item text rather than
+  an index so a record stays meaningful even if the template is edited later; also stamps
+  `lastUpdatedBy`, informational only). `photoUrl` is an optional proof-of-completion photo — a
+  base64 data URI like `User.avatarUrl`, capped smaller at 400,000 characters since it should
+  already be resized/compressed client-side — attached in a follow-up `PATCH` after the item is
+  marked, re-sending the same `done` value alongside the new `photoUrl`.
 
   Once every item in a section is answered, anyone can submit it: `PATCH
   /checklists/current/opening/submit` / `/closing/submit` (`{ position, jobSite? }` — `400`s if

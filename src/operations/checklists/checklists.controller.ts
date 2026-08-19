@@ -32,7 +32,8 @@ export class ChecklistsController {
     return this.checklistsService.upsertTemplate(user.organizationId, dto);
   }
 
-  @Roles(UserRole.OWNER, UserRole.MANAGER)
+  // Any authenticated user — doubles as the catalog of available Opening/Closing Checklist
+  // "forms" to pick from, and as the source list for owner/manager's Manage Checklists editor.
   @Get('templates')
   findAllTemplates(@CurrentUser() user: AuthenticatedUser) {
     return this.checklistsService.findAllTemplates(user.organizationId);
@@ -69,6 +70,7 @@ export class ChecklistsController {
       'opening',
       dto.item,
       dto.done,
+      dto.photoUrl,
     );
   }
 
@@ -85,6 +87,7 @@ export class ChecklistsController {
       'closing',
       dto.item,
       dto.done,
+      dto.photoUrl,
     );
   }
 

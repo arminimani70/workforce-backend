@@ -110,9 +110,9 @@ export class ChecklistsService {
     };
   }
 
-  // Sets one item's explicit done/not-done status on the shared sheet — matches the checklist
-  // screen's tap-one-item-at-a-time interaction, rather than requiring the whole section be
-  // resent.
+  // Sets one item's explicit done/not-done status (and optionally a proof-of-completion photo)
+  // on the shared sheet — matches the checklist screen's tap-one-item-at-a-time interaction,
+  // rather than requiring the whole section be resent.
   async updateItem(
     organizationId: string,
     employeeId: string,
@@ -121,12 +121,17 @@ export class ChecklistsService {
     section: 'opening' | 'closing',
     item: string,
     done: boolean,
+    photoUrl?: string,
   ) {
     const field = section === 'opening' ? 'openingStatuses' : 'closingStatuses';
+    const itemSet: Record<string, unknown> = { [`${field}.$.done`]: done };
+    if (photoUrl !== undefined) {
+      itemSet[`${field}.$.photoUrl`] = photoUrl;
+    }
 
     const updated = await this.completionModel.findOneAndUpdate(
       { organizationId, position, jobSite, [`${field}.item`]: item },
-      { $set: { [`${field}.$.done`]: done, lastUpdatedBy: employeeId } },
+      { $set: { ...itemSet, lastUpdatedBy: employeeId } },
       { new: true },
     );
     if (updated) {
@@ -138,7 +143,7 @@ export class ChecklistsService {
       {
         $setOnInsert: { organizationId, position, jobSite },
         $set: { lastUpdatedBy: employeeId },
-        $push: { [field]: { item, done } },
+        $push: { [field]: { item, done, photoUrl } },
       },
       { upsert: true, new: true },
     );
