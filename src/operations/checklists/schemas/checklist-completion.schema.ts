@@ -15,12 +15,7 @@ export class ChecklistItemStatus {
   @Prop({ required: true })
   done: boolean;
 
-  // Optional proof-of-completion photo, a base64 data URI like User.avatarUrl — attached after
-  // the item is marked, so it's only ever set alongside an existing done/not-done value.
-  @Prop()
-  photoUrl?: string;
-
-  // Optional free-text note, same "attached after the item is marked" convention as photoUrl.
+  // Optional free-text note, attached after the item is marked.
   @Prop({ maxlength: 1000 })
   note?: string;
 }

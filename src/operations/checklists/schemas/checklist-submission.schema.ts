@@ -45,6 +45,12 @@ export class ChecklistSubmission {
   @Prop({ required: true, maxlength: 20_000 })
   signature: string;
 
+  // Proof-of-completion photos for the round as a whole, captured once at submit time rather
+  // than per item — base64 data URIs like User.avatarUrl, capped at 8 since this is meant as a
+  // quick "here's the finished state" batch, not a photo log of every single item.
+  @Prop({ type: [String], default: [] })
+  photos: string[];
+
   // Not @Prop-decorated — added by { timestamps: true }; declared so TS knows about it.
   createdAt: Date;
 }

@@ -71,7 +71,6 @@ export class ChecklistsController {
       'opening',
       dto.item,
       dto.done,
-      dto.photoUrl,
       dto.note,
     );
   }
@@ -89,7 +88,6 @@ export class ChecklistsController {
       'closing',
       dto.item,
       dto.done,
-      dto.photoUrl,
       dto.note,
     );
   }
@@ -106,6 +104,7 @@ export class ChecklistsController {
       dto.jobSite?.trim() ?? '',
       'opening',
       dto.signature,
+      dto.photos ?? [],
     );
   }
 
@@ -121,6 +120,7 @@ export class ChecklistsController {
       dto.jobSite?.trim() ?? '',
       'closing',
       dto.signature,
+      dto.photos ?? [],
     );
   }
 }

@@ -112,9 +112,9 @@ export class ChecklistsService {
     };
   }
 
-  // Sets one item's explicit done/not-done status (and optionally a proof-of-completion photo
-  // and/or a free-text note) on the shared sheet — matches the checklist screen's
-  // tap-one-item-at-a-time interaction, rather than requiring the whole section be resent.
+  // Sets one item's explicit done/not-done status (and optionally a free-text note) on the
+  // shared sheet — matches the checklist screen's tap-one-item-at-a-time interaction, rather
+  // than requiring the whole section be resent.
   async updateItem(
     organizationId: string,
     employeeId: string,
@@ -123,14 +123,10 @@ export class ChecklistsService {
     section: 'opening' | 'closing',
     item: string,
     done: boolean,
-    photoUrl?: string,
     note?: string,
   ) {
     const field = section === 'opening' ? 'openingStatuses' : 'closingStatuses';
     const itemSet: Record<string, unknown> = { [`${field}.$.done`]: done };
-    if (photoUrl !== undefined) {
-      itemSet[`${field}.$.photoUrl`] = photoUrl;
-    }
     if (note !== undefined) {
       itemSet[`${field}.$.note`] = note;
     }
@@ -149,7 +145,7 @@ export class ChecklistsService {
       {
         $setOnInsert: { organizationId, position, jobSite },
         $set: { lastUpdatedBy: employeeId },
-        $push: { [field]: { item, done, photoUrl, note } },
+        $push: { [field]: { item, done, note } },
       },
       { upsert: true, new: true },
     );
@@ -166,6 +162,7 @@ export class ChecklistsService {
     jobSite: string,
     section: 'opening' | 'closing',
     signature: string,
+    photos: string[],
   ) {
     const template = await this.resolveTemplate(
       organizationId,
@@ -209,6 +206,7 @@ export class ChecklistsService {
       statuses,
       submittedBy: employeeId,
       signature,
+      photos,
     });
 
     const field = section === 'opening' ? 'openingStatuses' : 'closingStatuses';
