@@ -5,6 +5,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -20,6 +21,17 @@ import { CreateSwapRequestDto } from './dto/create-swap-request.dto';
 @Controller('shifts/swap-requests')
 export class SwapRequestsController {
   constructor(private readonly swapRequestsService: SwapRequestsService) {}
+
+  @Get('candidates')
+  findEligibleCandidates(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('shiftId') shiftId: string,
+  ) {
+    return this.swapRequestsService.findEligibleCandidates(
+      user.organizationId,
+      shiftId,
+    );
+  }
 
   @Post()
   create(
@@ -38,11 +50,28 @@ export class SwapRequestsController {
     return this.swapRequestsService.findMine(user.organizationId, user.userId);
   }
 
+  @Get('open')
+  findOpen(@CurrentUser() user: AuthenticatedUser) {
+    return this.swapRequestsService.findOpenForEmployee(
+      user.organizationId,
+      user.userId,
+    );
+  }
+
   @Roles(UserRole.OWNER, UserRole.MANAGER)
   @Get()
   findPendingManager(@CurrentUser() user: AuthenticatedUser) {
     return this.swapRequestsService.findPendingManagerForOrg(
       user.organizationId,
+    );
+  }
+
+  @Patch(':id/volunteer')
+  volunteer(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
+    return this.swapRequestsService.volunteer(
+      user.organizationId,
+      id,
+      user.userId,
     );
   }
 

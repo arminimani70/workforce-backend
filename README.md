@@ -87,19 +87,46 @@ Requires a running MongoDB instance (local `mongod`, Docker, or Atlas) reachable
   /availability?from=&to=` (owner/manager only — every entry in the range org-wide,
   `employeeId` populated with `fullName`/`role`) powers the week-builder's "who marked
   themselves available this day" cross-reference against the exact dates being built.
-- **operations/scheduling/swap-requests** — direct 1:1 shift trades, gated by both the target
-  employee and a manager: `POST /shifts/swap-requests` (any authenticated user — offers one of
-  the caller's own *approved* shifts in trade for another employee's *approved* shift, both by
-  `id`; starts `status: pending_target`), `GET /shifts/swap-requests/me` (every request the
-  caller is on either side of, sent or received), `GET /shifts/swap-requests` (owner/manager
-  only — every request already accepted by its target and now awaiting manager approval),
+- **operations/scheduling/swap-requests** — offering one of the caller's own *approved* shifts
+  to someone else, gated by both the target (or a self-selected volunteer) and a manager:
+  `GET /shifts/swap-requests/candidates?shiftId=` (any authenticated user — who's eligible to
+  be picked as a direct target for that shift: anyone with an *approved* shift the same day in
+  the same `position` but a *different* `jobSite`, or anyone with no shift at all that day),
+  `POST /shifts/swap-requests` (`requestingShiftId` required; `targetEmployeeId` optional — omit
+  it to broadcast the shift as an open "Free Volunteer" request instead of targeting one
+  person; the server re-validates target eligibility itself, not just trusting the candidates
+  list). Three shapes fall out of this depending on what happens at approval time:
+  - **Target has no shift that day** — a pure reassignment. `targetShiftId` is left unset;
+    approving just hands `requestingShiftId` over to the target.
+  - **Target has an approved shift that day at another branch, same position** — a true mutual
+    swap. `targetShiftId` is set; approving exchanges both shifts' `employeeId`, everything else
+    (time, position, jobSite) stays put.
+  - **Open / "Free Volunteer"** (`targetEmployeeId` omitted) — starts `status: open` with no
+    target at all. `GET /shifts/swap-requests/open` (any authenticated user — every `open`
+    request where the caller has no approved shift that day; not position-filtered) and
+    `PATCH /shifts/swap-requests/:id/volunteer` (self-claim — sets `targetEmployeeId` to the
+    caller and skips straight to `pending_manager`, same as a direct target accepting) power
+    this path.
+
+  Remaining lifecycle, shared across all three shapes: `GET /shifts/swap-requests/me` (every
+  request the caller is on either side of, sent or received), `GET /shifts/swap-requests`
+  (owner/manager only — every request already agreed to and now awaiting manager approval),
   `PATCH /shifts/swap-requests/:id/accept` / `/decline` (target employee only, while
   `pending_target` — accept moves it to `pending_manager`, decline moves it to `rejected`),
-  `PATCH /shifts/swap-requests/:id/cancel` (requester only, while still `pending_target`),
-  `PATCH /shifts/swap-requests/:id/approve` / `/deny` (owner/manager only, while
-  `pending_manager` — approve is the only place the actual swap happens: the two shifts'
-  `employeeId` are exchanged and the request becomes `approved`; deny leaves both shifts
-  untouched and marks it `rejected`).
+  `PATCH /shifts/swap-requests/:id/cancel` (requester only, while still `pending_target` or
+  `open`), `PATCH /shifts/swap-requests/:id/approve` / `/deny` (owner/manager only, while
+  `pending_manager` — approve is where the shift reassignment actually happens, per the three
+  shapes above; deny leaves the shift(s) untouched and marks it `rejected`).
+- **operations/scheduling/shift-edit-requests** — correcting the start/end time of a shift
+  that has already happened, gated by manager approval: `POST /shifts/edit-requests`
+  (`shiftId`, `startTime`, `endTime` — only the shift's own employee may request it, only for an
+  *approved* shift, and only if the shift's calendar day is strictly before today — a shift that
+  ended earlier today is not eligible, the earliest eligible day is yesterday's), `GET
+  /shifts/edit-requests/me` (the caller's own requests), `GET /shifts/edit-requests`
+  (owner/manager only — every `pending` request org-wide), `PATCH
+  /shifts/edit-requests/:id/cancel` (requester only, while still `pending`), `PATCH
+  /shifts/edit-requests/:id/approve` (owner/manager only — applies `newStartTime`/`newEndTime`
+  to the actual shift) / `/reject` (leaves the shift untouched).
 - **operations/tasks** — `POST /tasks` (owner/manager only — assign directly with
   `assignedTo`, or omit it and give `position` + `dueDate` instead: the server finds whoever
   has an *approved* shift for that position on that date and assigns them; 404s if nobody
