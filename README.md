@@ -42,14 +42,17 @@ Requires a running MongoDB instance (local `mongod`, Docker, or Atlas) reachable
   current password).
 - **organizations** — `GET /organizations/me`
 - **operations/time-clock** — `POST /time-clock/clock-in` (`{ lat?, lng?, dayStart?, dayEnd?,
-  reason? }`), `POST /time-clock/clock-out` (`{ lat?, lng? }`), `GET /time-clock/status` (the
-  caller's open entry, if any), `GET /time-clock/history?limit=20`, `GET /time-clock/total?from=&to=`
-  (`{ totalSeconds }` summed over entries that started in that window; an entry still open
-  counts up to now). Clock-in rejects with `400` when the employee has no approved shift
-  starting in `[dayStart, dayEnd]` (defaults to the server's UTC day if omitted) — unless
-  `reason` is set, which is stored on the entry and skips that check entirely; this is the
-  "Emergency Clock In" escape hatch for starting work with nothing scheduled. Depends on
-  SchedulingModule (exports `SchedulingService`) for the shift lookup.
+  reason?, jobSite?, position? }`), `POST /time-clock/clock-out` (`{ lat?, lng? }`),
+  `GET /time-clock/status` (the caller's open entry, if any), `GET /time-clock/history?limit=20`,
+  `GET /time-clock/total?from=&to=` (`{ totalSeconds }` summed over entries that started in that
+  window; an entry still open counts up to now). Clock-in rejects with `400` when the employee
+  has no approved shift starting in `[dayStart, dayEnd]` (defaults to the server's UTC day if
+  omitted) — unless `reason` is set, which skips that check entirely; this is the "Extra Shift
+  Clock In" escape hatch for starting work with nothing scheduled (covering a coworker, an
+  extra day, called in urgently, etc). When `reason` is set, `jobSite` and `position` become
+  required too (`400` if missing) and are stored alongside it on the entry, since there's no
+  shift to infer the branch/position from otherwise. Depends on SchedulingModule (exports
+  `SchedulingService`) for the shift lookup.
 - **operations/scheduling** — `POST /shifts` (owner/manager only, starts `approval: pending`,
   optional `position`: `frontdesk`/`helpdesk`/`information`/`consultation`/`manager`),
   `PATCH /shifts/:id/confirm` / `PATCH /shifts/:id/reject` (owner/manager only),

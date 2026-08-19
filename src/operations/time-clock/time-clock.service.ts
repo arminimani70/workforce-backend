@@ -47,6 +47,8 @@ export class TimeClockService {
     }
 
     const reason = dto.reason?.trim();
+    const jobSite = dto.jobSite?.trim();
+
     if (!reason) {
       const dayStart = dayBounds(dto.dayStart, () => {
         const d = new Date();
@@ -65,8 +67,17 @@ export class TimeClockService {
       );
       if (todaysShifts.length === 0) {
         throw new BadRequestException(
-          'No shift scheduled today — use Emergency Clock In if you need to start work without one',
+          'No shift scheduled today — use Extra Shift Clock In if you need to start work without one',
         );
+      }
+    } else {
+      // A no-shift clock-in has nothing to infer the branch/position from, so both are
+      // required alongside the reason.
+      if (!jobSite) {
+        throw new BadRequestException('Select a branch for this clock-in');
+      }
+      if (!dto.position) {
+        throw new BadRequestException('Select a position for this clock-in');
       }
     }
 
@@ -76,6 +87,8 @@ export class TimeClockService {
       clockInTime: new Date(),
       clockInLocation: toGeoPoint(dto),
       reason,
+      jobSite,
+      position: dto.position,
     });
   }
 

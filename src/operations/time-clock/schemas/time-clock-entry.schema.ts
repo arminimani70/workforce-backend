@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
+import { Position } from '../../../common/enums/position.enum';
 
 export type TimeClockEntryDocument = HydratedDocument<TimeClockEntry>;
 
@@ -42,10 +43,17 @@ export class TimeClockEntry {
   @Prop({ type: Types.ObjectId, ref: 'Shift' })
   shiftId?: Types.ObjectId;
 
-  // Set only for an emergency clock-in — one made without an approved shift scheduled that
-  // day, where TimeClockService requires the employee to explain why.
+  // reason/jobSite/position are set only for a clock-in made without an approved shift
+  // scheduled that day — TimeClockService requires all three in that case, since there's no
+  // shift to infer the branch/position from otherwise.
   @Prop({ trim: true })
   reason?: string;
+
+  @Prop({ trim: true })
+  jobSite?: string;
+
+  @Prop({ type: String, enum: Position })
+  position?: Position;
 }
 
 export const TimeClockEntrySchema =
