@@ -10,5 +10,6 @@ import { BranchesController } from './branches.controller';
   ],
   controllers: [BranchesController],
   providers: [BranchesService],
+  exports: [BranchesService],
 })
 export class BranchesModule {}

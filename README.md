@@ -51,8 +51,15 @@ Requires a running MongoDB instance (local `mongod`, Docker, or Atlas) reachable
   Clock In" escape hatch for starting work with nothing scheduled (covering a coworker, an
   extra day, called in urgently, etc). When `reason` is set, `jobSite` and `position` become
   required too (`400` if missing) and are stored alongside it on the entry, since there's no
-  shift to infer the branch/position from otherwise. Depends on SchedulingModule (exports
-  `SchedulingService`) for the shift lookup.
+  shift to infer the branch/position from otherwise. Either way, once a branch is resolved (the
+  relevant shift's `jobSite` in the normal path, current-if-underway else next like
+  `useTodayShiftContext` on the app; the chosen `jobSite` in the no-shift path) and it matches
+  an entry in BranchesModule by name, clock-in is geofenced: `lat`/`lng` become required
+  (`400` if missing — can't verify location) and rejected with `400` if the haversine distance
+  (`common/utils/geo.util.ts`, mirroring the app's client-side copy) to the branch exceeds its
+  `radiusMeters`. No match against BranchesModule (a `jobSite` with no corresponding branch) —
+  skips the geofence check entirely. Depends on SchedulingModule (exports `SchedulingService`)
+  for the shift lookup and BranchesModule (exports `BranchesService`) for the geofence.
 - **operations/scheduling** — `POST /shifts` (owner/manager only, starts `approval: pending`,
   optional `position`: `frontdesk`/`helpdesk`/`information`/`consultation`/`manager`),
   `PATCH /shifts/:id/confirm` / `PATCH /shifts/:id/reject` (owner/manager only),

@@ -41,6 +41,15 @@ export class BranchesService {
     return this.branchModel.find({ organizationId }).sort({ name: 1 });
   }
 
+  // Shift.jobSite/ClockInDto.jobSite are plain-text snapshots, not references to this
+  // collection (see the schema's comment) — this is how a caller with just a name resolves it
+  // back to the branch record, case-insensitively since names are shown/typed inconsistently.
+  async findByName(organizationId: string, name: string) {
+    const needle = name.trim().toLowerCase();
+    const branches = await this.branchModel.find({ organizationId });
+    return branches.find((b) => b.name.trim().toLowerCase() === needle) ?? null;
+  }
+
   async delete(organizationId: string, id: string) {
     if (!isValidObjectId(id)) {
       throw new NotFoundException('Branch not found');

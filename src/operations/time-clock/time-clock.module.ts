@@ -7,6 +7,7 @@ import {
 import { TimeClockService } from './time-clock.service';
 import { TimeClockController } from './time-clock.controller';
 import { SchedulingModule } from '../scheduling/scheduling.module';
+import { BranchesModule } from '../branches/branches.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { SchedulingModule } from '../scheduling/scheduling.module';
       { name: TimeClockEntry.name, schema: TimeClockEntrySchema },
     ]),
     SchedulingModule,
+    BranchesModule,
   ],
   controllers: [TimeClockController],
   providers: [TimeClockService],

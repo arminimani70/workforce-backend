@@ -13,6 +13,8 @@ import {
 import { ClockLocationDto } from './dto/clock-location.dto';
 import { ClockInDto } from './dto/clock-in.dto';
 import { SchedulingService } from '../scheduling/scheduling.service';
+import { BranchesService } from '../branches/branches.service';
+import { distanceMeters } from '../../common/utils/geo.util';
 
 function toGeoPoint(dto: ClockLocationDto) {
   return dto.lat !== undefined && dto.lng !== undefined
@@ -30,6 +32,7 @@ export class TimeClockService {
     @InjectModel(TimeClockEntry.name)
     private readonly entryModel: Model<TimeClockEntryDocument>,
     private readonly schedulingService: SchedulingService,
+    private readonly branchesService: BranchesService,
   ) {}
 
   private findOpenEntry(organizationId: string, employeeId: string) {
@@ -48,6 +51,11 @@ export class TimeClockService {
 
     const reason = dto.reason?.trim();
     const jobSite = dto.jobSite?.trim();
+    // Which branch to geofence-check against — the no-shift path uses the branch picked in the
+    // popup; the normal path infers it from whichever of today's shifts is relevant (same
+    // "current, else next" rule useTodayShiftContext uses on the app, so the two never disagree
+    // about which shift's branch applies).
+    let geofenceJobSite = jobSite;
 
     if (!reason) {
       const dayStart = dayBounds(dto.dayStart, () => {
@@ -70,6 +78,20 @@ export class TimeClockService {
           'No shift scheduled today — use Extra Shift Clock In if you need to start work without one',
         );
       }
+
+      const now = Date.now();
+      const current = todaysShifts.find(
+        (s) =>
+          new Date(s.startTime).getTime() <= now &&
+          now <= new Date(s.endTime).getTime(),
+      );
+      const next = todaysShifts
+        .filter((s) => new Date(s.startTime).getTime() > now)
+        .sort(
+          (a, b) =>
+            new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
+        )[0];
+      geofenceJobSite = (current ?? next ?? todaysShifts[0]).jobSite;
     } else {
       // A no-shift clock-in has nothing to infer the branch/position from, so both are
       // required alongside the reason.
@@ -78,6 +100,30 @@ export class TimeClockService {
       }
       if (!dto.position) {
         throw new BadRequestException('Select a position for this clock-in');
+      }
+    }
+
+    if (geofenceJobSite) {
+      const branch = await this.branchesService.findByName(
+        organizationId,
+        geofenceJobSite,
+      );
+      if (branch) {
+        const location = toGeoPoint(dto);
+        if (!location) {
+          throw new BadRequestException(
+            `Location is required to clock in at ${branch.name} — enable location and try again`,
+          );
+        }
+        const distance = distanceMeters(location, {
+          lat: branch.lat,
+          lng: branch.lng,
+        });
+        if (distance > branch.radiusMeters) {
+          throw new BadRequestException(
+            `You're too far from ${branch.name} to clock in — must be within ${branch.radiusMeters}m`,
+          );
+        }
       }
     }
 
