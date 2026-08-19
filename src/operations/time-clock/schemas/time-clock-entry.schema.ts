@@ -41,6 +41,11 @@ export class TimeClockEntry {
   // Left unset for now — Scheduling (Shift) module doesn't exist yet.
   @Prop({ type: Types.ObjectId, ref: 'Shift' })
   shiftId?: Types.ObjectId;
+
+  // Set only for an emergency clock-in — one made without an approved shift scheduled that
+  // day, where TimeClockService requires the employee to explain why.
+  @Prop({ trim: true })
+  reason?: string;
 }
 
 export const TimeClockEntrySchema =

@@ -41,11 +41,15 @@ Requires a running MongoDB instance (local `mongod`, Docker, or Atlas) reachable
   + `newPassword`, verified against the stored hash before it's changed — `401` on a wrong
   current password).
 - **organizations** — `GET /organizations/me`
-- **operations/time-clock** — `POST /time-clock/clock-in`, `POST /time-clock/clock-out`
-  (both accept an optional `{ lat, lng }` body), `GET /time-clock/status` (the caller's open
-  entry, if any), `GET /time-clock/history?limit=20`, `GET /time-clock/total?from=&to=`
+- **operations/time-clock** — `POST /time-clock/clock-in` (`{ lat?, lng?, dayStart?, dayEnd?,
+  reason? }`), `POST /time-clock/clock-out` (`{ lat?, lng? }`), `GET /time-clock/status` (the
+  caller's open entry, if any), `GET /time-clock/history?limit=20`, `GET /time-clock/total?from=&to=`
   (`{ totalSeconds }` summed over entries that started in that window; an entry still open
-  counts up to now)
+  counts up to now). Clock-in rejects with `400` when the employee has no approved shift
+  starting in `[dayStart, dayEnd]` (defaults to the server's UTC day if omitted) — unless
+  `reason` is set, which is stored on the entry and skips that check entirely; this is the
+  "Emergency Clock In" escape hatch for starting work with nothing scheduled. Depends on
+  SchedulingModule (exports `SchedulingService`) for the shift lookup.
 - **operations/scheduling** — `POST /shifts` (owner/manager only, starts `approval: pending`,
   optional `position`: `frontdesk`/`helpdesk`/`information`/`consultation`/`manager`),
   `PATCH /shifts/:id/confirm` / `PATCH /shifts/:id/reject` (owner/manager only),

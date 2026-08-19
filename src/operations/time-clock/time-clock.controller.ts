@@ -4,6 +4,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../../auth/types/authenticated-user.type';
 import { TimeClockService } from './time-clock.service';
 import { ClockLocationDto } from './dto/clock-location.dto';
+import { ClockInDto } from './dto/clock-in.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('time-clock')
@@ -11,15 +12,8 @@ export class TimeClockController {
   constructor(private readonly timeClockService: TimeClockService) {}
 
   @Post('clock-in')
-  clockIn(
-    @CurrentUser() user: AuthenticatedUser,
-    @Body() location: ClockLocationDto,
-  ) {
-    return this.timeClockService.clockIn(
-      user.organizationId,
-      user.userId,
-      location,
-    );
+  clockIn(@CurrentUser() user: AuthenticatedUser, @Body() dto: ClockInDto) {
+    return this.timeClockService.clockIn(user.organizationId, user.userId, dto);
   }
 
   @Post('clock-out')

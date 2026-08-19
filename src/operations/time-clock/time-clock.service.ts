@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -10,6 +11,8 @@ import {
   TimeClockEntryDocument,
 } from './schemas/time-clock-entry.schema';
 import { ClockLocationDto } from './dto/clock-location.dto';
+import { ClockInDto } from './dto/clock-in.dto';
+import { SchedulingService } from '../scheduling/scheduling.service';
 
 function toGeoPoint(dto: ClockLocationDto) {
   return dto.lat !== undefined && dto.lng !== undefined
@@ -17,11 +20,16 @@ function toGeoPoint(dto: ClockLocationDto) {
     : undefined;
 }
 
+function dayBounds(iso: string | undefined, fallback: () => Date) {
+  return iso ? new Date(iso) : fallback();
+}
+
 @Injectable()
 export class TimeClockService {
   constructor(
     @InjectModel(TimeClockEntry.name)
     private readonly entryModel: Model<TimeClockEntryDocument>,
+    private readonly schedulingService: SchedulingService,
   ) {}
 
   private findOpenEntry(organizationId: string, employeeId: string) {
@@ -32,21 +40,42 @@ export class TimeClockService {
     });
   }
 
-  async clockIn(
-    organizationId: string,
-    employeeId: string,
-    location: ClockLocationDto,
-  ) {
+  async clockIn(organizationId: string, employeeId: string, dto: ClockInDto) {
     const openEntry = await this.findOpenEntry(organizationId, employeeId);
     if (openEntry) {
       throw new ConflictException('Already clocked in');
+    }
+
+    const reason = dto.reason?.trim();
+    if (!reason) {
+      const dayStart = dayBounds(dto.dayStart, () => {
+        const d = new Date();
+        d.setHours(0, 0, 0, 0);
+        return d;
+      });
+      const dayEnd = dayBounds(dto.dayEnd, () => {
+        const d = new Date();
+        d.setHours(23, 59, 59, 999);
+        return d;
+      });
+      const todaysShifts = await this.schedulingService.findForEmployee(
+        organizationId,
+        employeeId,
+        { from: dayStart, to: dayEnd, approvedOnly: true },
+      );
+      if (todaysShifts.length === 0) {
+        throw new BadRequestException(
+          'No shift scheduled today — use Emergency Clock In if you need to start work without one',
+        );
+      }
     }
 
     return this.entryModel.create({
       organizationId,
       employeeId,
       clockInTime: new Date(),
-      clockInLocation: toGeoPoint(location),
+      clockInLocation: toGeoPoint(dto),
+      reason,
     });
   }
 
