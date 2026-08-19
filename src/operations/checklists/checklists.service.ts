@@ -10,18 +10,17 @@ import {
   ChecklistCompletion,
   ChecklistCompletionDocument,
 } from './schemas/checklist-completion.schema';
+import {
+  ChecklistSection,
+  ChecklistSubmission,
+  ChecklistSubmissionDocument,
+} from './schemas/checklist-submission.schema';
 import { UpsertChecklistTemplateDto } from './dto/upsert-checklist-template.dto';
 
 // jobSite is free text, so it can contain regex metacharacters that would otherwise change
 // what the case-insensitive template lookup below actually matches.
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function startOfToday(): Date {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d;
 }
 
 @Injectable()
@@ -31,6 +30,8 @@ export class ChecklistsService {
     private readonly templateModel: Model<ChecklistTemplateDocument>,
     @InjectModel(ChecklistCompletion.name)
     private readonly completionModel: Model<ChecklistCompletionDocument>,
+    @InjectModel(ChecklistSubmission.name)
+    private readonly submissionModel: Model<ChecklistSubmissionDocument>,
   ) {}
 
   upsertTemplate(organizationId: string, dto: UpsertChecklistTemplateDto) {
@@ -84,29 +85,21 @@ export class ChecklistsService {
       .sort({ position: 1, jobSite: 1 });
   }
 
-  // Resolves today's checklist for the caller: the template matching the given position+branch
-  // (empty lists if none defined) plus the caller's own progress on it so far today. Not tied
-  // to a shift — a checklist can be opened and filled even on a day with no shift scheduled.
-  async getToday(
+  // Resolves the live checklist for a position+branch: the matching template (empty lists if
+  // none defined) plus whatever's currently marked on the shared sheet. Not tied to a shift or
+  // a day — it persists until someone submits a section (which resets just that section) or a
+  // manager edits the template.
+  async getCurrent(
     organizationId: string,
-    employeeId: string,
     position: Position,
     jobSite: string,
   ) {
-    const date = startOfToday();
     const [template, completion] = await Promise.all([
       this.resolveTemplate(organizationId, position, jobSite),
-      this.completionModel.findOne({
-        organizationId,
-        employeeId,
-        date,
-        position,
-        jobSite,
-      }),
+      this.completionModel.findOne({ organizationId, position, jobSite }),
     ]);
 
     return {
-      date: date.toISOString(),
       position,
       jobSite: jobSite || null,
       title: template?.title || null,
@@ -114,13 +107,12 @@ export class ChecklistsService {
       closingItems: template?.closingItems ?? [],
       openingStatuses: completion?.openingStatuses ?? [],
       closingStatuses: completion?.closingStatuses ?? [],
-      openingSubmittedAt: completion?.openingSubmittedAt ?? null,
-      closingSubmittedAt: completion?.closingSubmittedAt ?? null,
     };
   }
 
-  // Sets one item's explicit done/not-done status for today — matches the checklist screen's
-  // tap-one-item-at-a-time interaction, rather than requiring the whole section be resent.
+  // Sets one item's explicit done/not-done status on the shared sheet — matches the checklist
+  // screen's tap-one-item-at-a-time interaction, rather than requiring the whole section be
+  // resent.
   async updateItem(
     organizationId: string,
     employeeId: string,
@@ -130,19 +122,11 @@ export class ChecklistsService {
     item: string,
     done: boolean,
   ) {
-    const date = startOfToday();
     const field = section === 'opening' ? 'openingStatuses' : 'closingStatuses';
 
     const updated = await this.completionModel.findOneAndUpdate(
-      {
-        organizationId,
-        employeeId,
-        date,
-        position,
-        jobSite,
-        [`${field}.item`]: item,
-      },
-      { $set: { [`${field}.$.done`]: done } },
+      { organizationId, position, jobSite, [`${field}.item`]: item },
+      { $set: { [`${field}.$.done`]: done, lastUpdatedBy: employeeId } },
       { new: true },
     );
     if (updated) {
@@ -150,17 +134,20 @@ export class ChecklistsService {
     }
 
     return this.completionModel.findOneAndUpdate(
-      { organizationId, employeeId, date, position, jobSite },
+      { organizationId, position, jobSite },
       {
-        $setOnInsert: { organizationId, employeeId, date, position, jobSite },
+        $setOnInsert: { organizationId, position, jobSite },
+        $set: { lastUpdatedBy: employeeId },
         $push: { [field]: { item, done } },
       },
       { upsert: true, new: true },
     );
   }
 
-  // Marks a section submitted — only once every one of its template items has an explicit
-  // status, so a manager reviewing submissions never sees a section that's silently incomplete.
+  // Archives the section's current state as a new, independent submission — so someone
+  // reviewing history sees every round, even from different people sharing the same
+  // position+branch across a day — then resets that section on the shared sheet back to blank.
+  // Only once every one of the section's template items has an explicit status.
   async submitSection(
     organizationId: string,
     employeeId: string,
@@ -168,7 +155,6 @@ export class ChecklistsService {
     jobSite: string,
     section: 'opening' | 'closing',
   ) {
-    const date = startOfToday();
     const template = await this.resolveTemplate(
       organizationId,
       position,
@@ -186,8 +172,6 @@ export class ChecklistsService {
 
     const completion = await this.completionModel.findOne({
       organizationId,
-      employeeId,
-      date,
       position,
       jobSite,
     });
@@ -202,27 +186,32 @@ export class ChecklistsService {
       );
     }
 
-    const field =
-      section === 'opening' ? 'openingSubmittedAt' : 'closingSubmittedAt';
-    return this.completionModel.findOneAndUpdate(
-      { organizationId, employeeId, date, position, jobSite },
-      { $set: { [field]: new Date() } },
-      { new: true },
+    const submission = await this.submissionModel.create({
+      organizationId,
+      position,
+      jobSite,
+      section:
+        section === 'opening'
+          ? ChecklistSection.OPENING
+          : ChecklistSection.CLOSING,
+      statuses,
+      submittedBy: employeeId,
+    });
+
+    const field = section === 'opening' ? 'openingStatuses' : 'closingStatuses';
+    await this.completionModel.updateOne(
+      { organizationId, position, jobSite },
+      { $set: { [field]: [] } },
     );
+
+    return submission;
   }
 
-  // Org-wide, owner/manager only — every checklist with at least one submitted section, newest
-  // first.
+  // Org-wide, owner/manager only — every submitted checklist round ever, newest first.
   findSubmissions(organizationId: string) {
-    return this.completionModel
-      .find({
-        organizationId,
-        $or: [
-          { openingSubmittedAt: { $ne: null } },
-          { closingSubmittedAt: { $ne: null } },
-        ],
-      })
-      .populate('employeeId', 'fullName role')
-      .sort({ date: -1, updatedAt: -1 });
+    return this.submissionModel
+      .find({ organizationId })
+      .populate('submittedBy', 'fullName role')
+      .sort({ createdAt: -1 });
   }
 }

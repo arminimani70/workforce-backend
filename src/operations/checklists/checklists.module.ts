@@ -8,6 +8,10 @@ import {
   ChecklistCompletion,
   ChecklistCompletionSchema,
 } from './schemas/checklist-completion.schema';
+import {
+  ChecklistSubmission,
+  ChecklistSubmissionSchema,
+} from './schemas/checklist-submission.schema';
 import { ChecklistsService } from './checklists.service';
 import { ChecklistsController } from './checklists.controller';
 
@@ -16,6 +20,7 @@ import { ChecklistsController } from './checklists.controller';
     MongooseModule.forFeature([
       { name: ChecklistTemplate.name, schema: ChecklistTemplateSchema },
       { name: ChecklistCompletion.name, schema: ChecklistCompletionSchema },
+      { name: ChecklistSubmission.name, schema: ChecklistSubmissionSchema },
     ]),
   ],
   controllers: [ChecklistsController],

@@ -44,20 +44,19 @@ export class ChecklistsController {
     return this.checklistsService.findSubmissions(user.organizationId);
   }
 
-  @Get('today')
-  getToday(
+  @Get('current')
+  getCurrent(
     @CurrentUser() user: AuthenticatedUser,
     @Query() dto: ResolveChecklistDto,
   ) {
-    return this.checklistsService.getToday(
+    return this.checklistsService.getCurrent(
       user.organizationId,
-      user.userId,
       dto.position,
       dto.jobSite?.trim() ?? '',
     );
   }
 
-  @Patch('today/opening')
+  @Patch('current/opening')
   updateOpening(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: UpdateChecklistItemDto,
@@ -73,7 +72,7 @@ export class ChecklistsController {
     );
   }
 
-  @Patch('today/closing')
+  @Patch('current/closing')
   updateClosing(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: UpdateChecklistItemDto,
@@ -89,7 +88,7 @@ export class ChecklistsController {
     );
   }
 
-  @Patch('today/opening/submit')
+  @Patch('current/opening/submit')
   submitOpening(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: ResolveChecklistDto,
@@ -103,7 +102,7 @@ export class ChecklistsController {
     );
   }
 
-  @Patch('today/closing/submit')
+  @Patch('current/closing/submit')
   submitClosing(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: ResolveChecklistDto,

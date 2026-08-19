@@ -16,11 +16,12 @@ export class ChecklistItemStatus {
   done: boolean;
 }
 
-// One per (employee, calendar day, position, branch) — not tied to a shift, so an employee can
-// fill out today's opening/closing checklist for their position even on a day they have no
-// shift scheduled. Tracks each item's explicit done/not-done status, plus when each section was
-// submitted (null until the employee explicitly submits it, once every item is answered) so
-// owner/manager can review what's actually been confirmed rather than just in-progress edits.
+// The one live, shared "clipboard" per (position, branch) — not per employee, not per day.
+// Multiple different people can hold the same position at the same branch across a day (shift
+// handoffs), so whoever's on duty marks this same sheet; submitting a section archives its
+// current state to ChecklistSubmission and resets that section back to blank here, ready for
+// the next person. Persists indefinitely otherwise — it only ever changes because someone
+// marks/submits it, or because a manager edits the underlying template.
 @Schema({ timestamps: true })
 export class ChecklistCompletion {
   @Prop({
@@ -30,13 +31,6 @@ export class ChecklistCompletion {
     index: true,
   })
   organizationId: Types.ObjectId;
-
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true, index: true })
-  employeeId: Types.ObjectId;
-
-  // Normalized to midnight — the calendar day this completion is for.
-  @Prop({ required: true })
-  date: Date;
 
   @Prop({ type: String, enum: Position, required: true })
   position: Position;
@@ -51,18 +45,16 @@ export class ChecklistCompletion {
   @Prop({ type: [ChecklistItemStatus], default: [] })
   closingStatuses: ChecklistItemStatus[];
 
-  @Prop({ type: Date, default: null })
-  openingSubmittedAt: Date | null;
-
-  @Prop({ type: Date, default: null })
-  closingSubmittedAt: Date | null;
+  // Informational only — whoever most recently marked an item, not part of the lookup key.
+  @Prop({ type: Types.ObjectId, ref: 'User' })
+  lastUpdatedBy?: Types.ObjectId;
 }
 
 export const ChecklistCompletionSchema =
   SchemaFactory.createForClass(ChecklistCompletion);
 
-// One completion record per employee+day+position+branch combination.
+// One live sheet per position+branch combination.
 ChecklistCompletionSchema.index(
-  { organizationId: 1, employeeId: 1, date: 1, position: 1, jobSite: 1 },
+  { organizationId: 1, position: 1, jobSite: 1 },
   { unique: true },
 );
