@@ -2,9 +2,9 @@ import {
   Body,
   Controller,
   Get,
-  Param,
   Patch,
   Put,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -15,7 +15,8 @@ import type { AuthenticatedUser } from '../../auth/types/authenticated-user.type
 import { UserRole } from '../../users/schemas/user.schema';
 import { ChecklistsService } from './checklists.service';
 import { UpsertChecklistTemplateDto } from './dto/upsert-checklist-template.dto';
-import { UpdateCompletionDto } from './dto/update-completion.dto';
+import { ResolveChecklistDto } from './dto/resolve-checklist.dto';
+import { UpdateChecklistItemDto } from './dto/update-checklist-item.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('checklists')
@@ -37,48 +38,82 @@ export class ChecklistsController {
     return this.checklistsService.findAllTemplates(user.organizationId);
   }
 
-  @Get('shift/:shiftId')
-  getShiftChecklist(
+  @Roles(UserRole.OWNER, UserRole.MANAGER)
+  @Get('submissions')
+  findSubmissions(@CurrentUser() user: AuthenticatedUser) {
+    return this.checklistsService.findSubmissions(user.organizationId);
+  }
+
+  @Get('today')
+  getToday(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('shiftId') shiftId: string,
+    @Query() dto: ResolveChecklistDto,
   ) {
-    return this.checklistsService.getShiftChecklist(
+    return this.checklistsService.getToday(
       user.organizationId,
       user.userId,
-      user.role,
-      shiftId,
+      dto.position,
+      dto.jobSite?.trim() ?? '',
     );
   }
 
-  @Patch('shift/:shiftId/opening')
+  @Patch('today/opening')
   updateOpening(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('shiftId') shiftId: string,
-    @Body() dto: UpdateCompletionDto,
+    @Body() dto: UpdateChecklistItemDto,
   ) {
-    return this.checklistsService.updateCompletion(
+    return this.checklistsService.updateItem(
       user.organizationId,
       user.userId,
-      shiftId,
+      dto.position,
+      dto.jobSite?.trim() ?? '',
       'opening',
       dto.item,
       dto.done,
     );
   }
 
-  @Patch('shift/:shiftId/closing')
+  @Patch('today/closing')
   updateClosing(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('shiftId') shiftId: string,
-    @Body() dto: UpdateCompletionDto,
+    @Body() dto: UpdateChecklistItemDto,
   ) {
-    return this.checklistsService.updateCompletion(
+    return this.checklistsService.updateItem(
       user.organizationId,
       user.userId,
-      shiftId,
+      dto.position,
+      dto.jobSite?.trim() ?? '',
       'closing',
       dto.item,
       dto.done,
+    );
+  }
+
+  @Patch('today/opening/submit')
+  submitOpening(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: ResolveChecklistDto,
+  ) {
+    return this.checklistsService.submitSection(
+      user.organizationId,
+      user.userId,
+      dto.position,
+      dto.jobSite?.trim() ?? '',
+      'opening',
+    );
+  }
+
+  @Patch('today/closing/submit')
+  submitClosing(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: ResolveChecklistDto,
+  ) {
+    return this.checklistsService.submitSection(
+      user.organizationId,
+      user.userId,
+      dto.position,
+      dto.jobSite?.trim() ?? '',
+      'closing',
     );
   }
 }

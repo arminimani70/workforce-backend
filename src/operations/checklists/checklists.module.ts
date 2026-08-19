@@ -10,7 +10,6 @@ import {
 } from './schemas/checklist-completion.schema';
 import { ChecklistsService } from './checklists.service';
 import { ChecklistsController } from './checklists.controller';
-import { SchedulingModule } from '../scheduling/scheduling.module';
 
 @Module({
   imports: [
@@ -18,7 +17,6 @@ import { SchedulingModule } from '../scheduling/scheduling.module';
       { name: ChecklistTemplate.name, schema: ChecklistTemplateSchema },
       { name: ChecklistCompletion.name, schema: ChecklistCompletionSchema },
     ]),
-    SchedulingModule,
   ],
   controllers: [ChecklistsController],
   providers: [ChecklistsService],

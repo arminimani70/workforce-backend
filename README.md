@@ -149,21 +149,29 @@ Requires a running MongoDB instance (local `mongod`, Docker, or Atlas) reachable
 - **operations/checklists** — opening/closing duty lists, one template per (`position`,
   `jobSite`) combination — the same position can have a different checklist at a different
   branch. `jobSite` is optional on a template: a blank `jobSite` is the position's default,
-  applied to any shift with that position — whether that shift has no branch of its own, or a
-  branch that has no template of its own. A template also carries an optional `title` (e.g.
-  "Morning Opening — Front Desk") so the same position can read differently at different
-  branches. `PUT /checklists/templates` (owner/manager only — upserts by `position` + `jobSite`:
-  `{ position, jobSite?, title?, openingItems: string[], closingItems: string[] }`), `GET
-  /checklists/templates` (owner/manager only — every template in the org). Completion is
-  tracked per shift, not per template, so it resets naturally each time someone works, and every
-  item's status is explicit — done or not done — never a silent "unchecked means not done":
-  `GET /checklists/shift/:shiftId` (the shift's own employee, or owner/manager for oversight —
-  resolves the best-matching template for that shift the same way as before, and returns
-  `openingStatuses`/`closingStatuses: [{ item, done }]` reflecting only the items answered so
-  far; an item absent from the array simply hasn't been marked either way yet), `PATCH
-  /checklists/shift/:shiftId/opening` / `/closing` (shift's own employee only — sets one item's
-  status: `{ item: string, done: boolean }`; storing the item text rather than an index so a
-  completion record stays meaningful even if the template is edited later).
+  applied to any pick of that position with no more specific branch template of its own. A
+  template also carries an optional `title` (e.g. "Morning Opening — Front Desk") so the same
+  position can read differently at different branches. `PUT /checklists/templates`
+  (owner/manager only — upserts by `position` + `jobSite`: `{ position, jobSite?, title?,
+  openingItems: string[], closingItems: string[] }`), `GET /checklists/templates` (owner/manager
+  only — every template in the org).
+
+  Filling one out is **not tied to a shift** — an employee can open and fill today's checklist
+  for their position even on a day they have no shift scheduled — so completion is tracked per
+  (employee, calendar day, position, branch) instead: `GET /checklists/today?position=&jobSite=`
+  (any authenticated user — resolves today's checklist for the caller: the best-matching
+  template for that position+branch plus the caller's own progress so far today, creating
+  nothing until the first item is marked). Every item's status is explicit — done or not done —
+  never a silent "unchecked means not done": `PATCH /checklists/today/opening` / `/closing`
+  (`{ position, jobSite?, item, done }` — sets one item's status, storing the item text rather
+  than an index so a completion record stays meaningful even if the template is edited later).
+
+  Once every item in a section is answered, the employee can submit it so a manager can review
+  it: `PATCH /checklists/today/opening/submit` / `/closing/submit` (`{ position, jobSite? }` —
+  `400`s if any item is still unanswered or the section has no items at all; stamps
+  `openingSubmittedAt`/`closingSubmittedAt`, otherwise `null`). `GET /checklists/submissions`
+  (owner/manager only — every checklist with at least one section submitted, newest by date,
+  employee populated) is the review list.
 - **operations/forms** — an org-wide catalog of ad hoc report types (e.g. "Damaged Product",
   "Equipment Malfunction", "Urgent Supply Request") — unlike checklists these aren't tied to a
   position or branch; any authenticated user can submit any of them, whenever something needs
