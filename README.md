@@ -71,9 +71,10 @@ Requires a running MongoDB instance (local `mongod`, Docker, or Atlas) reachable
   `approval: approved` shifts; owner/manager also see their own pending/rejected ones),
   `GET /shifts` (every shift in the org regardless of approval, owner/manager only),
   `GET /shifts/coworkers?from=&to=` (any authenticated user — every approved shift org-wide
-  with `startTime` in that window, `employeeId` populated with `fullName`/`role`, for "who else
-  is working today"; takes an explicit window rather than a bare date so the caller's
-  local-timezone day boundaries are used, not the server's)
+  with `startTime` in that window, `employeeId` populated with `fullName`/`role`/`avatarUrl`,
+  for "who else is working today" and the Schedule screen's per-day people list; takes an
+  explicit window rather than a bare date so the caller's local-timezone day boundaries are
+  used, not the server's)
 - **operations/availability** — date-based, not a recurring weekly pattern: one entry per
   (employee, exact calendar date), so availability can be set independently for any date in
   any future week. `GET /availability/me?from=&to=` (every date the caller has set a

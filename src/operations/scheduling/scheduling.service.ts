@@ -67,9 +67,10 @@ export class SchedulingService {
     return shift;
   }
 
-  // Every approved shift in the org starting in [from, to], with the employee's name/role
-  // populated — this is what powers "who else is working today" for any authenticated user,
-  // not just owner/manager. Takes the exact window rather than a bare date so the caller's
+  // Every approved shift in the org starting in [from, to], with the employee's
+  // name/role/avatar populated — this is what powers "who else is working today" (and the
+  // Schedule screen's avatar-per-row week view) for any authenticated user, not just
+  // owner/manager. Takes the exact window rather than a bare date so the caller's
   // local-timezone day boundaries are used instead of the server's.
   findCoworkersInRange(organizationId: string, from: Date, to: Date) {
     return this.shiftModel
@@ -78,7 +79,7 @@ export class SchedulingService {
         approval: ShiftApproval.APPROVED,
         startTime: { $gte: from, $lte: to },
       })
-      .populate('employeeId', 'fullName role')
+      .populate('employeeId', 'fullName role avatarUrl')
       .sort({ startTime: 1 });
   }
 
