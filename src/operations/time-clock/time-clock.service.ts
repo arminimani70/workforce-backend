@@ -79,19 +79,27 @@ export class TimeClockService {
         );
       }
 
+      // Only shifts with a branch attached are candidates for "the relevant shift" here — a
+      // shift scheduled without one (jobSite left blank) has nothing to geofence-check
+      // against. Mirrors useTodayShiftContext on the app exactly (same filter-then-pick-
+      // current-else-next order), so the two never disagree about which shift's branch is
+      // the one currently in effect — if they picked different shifts, the warning shown on
+      // screen and the branch actually enforced here could silently point at two different
+      // branches.
       const now = Date.now();
-      const current = todaysShifts.find(
+      const withBranch = todaysShifts.filter((s) => s.jobSite);
+      const current = withBranch.find(
         (s) =>
           new Date(s.startTime).getTime() <= now &&
           now <= new Date(s.endTime).getTime(),
       );
-      const next = todaysShifts
+      const next = withBranch
         .filter((s) => new Date(s.startTime).getTime() > now)
         .sort(
           (a, b) =>
             new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
         )[0];
-      geofenceJobSite = (current ?? next ?? todaysShifts[0]).jobSite;
+      geofenceJobSite = (current ?? next)?.jobSite;
     } else {
       // A no-shift clock-in has nothing to infer the branch/position from, so both are
       // required alongside the reason.
