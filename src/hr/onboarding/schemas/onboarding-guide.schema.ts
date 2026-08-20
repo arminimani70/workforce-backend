@@ -33,6 +33,12 @@ export class OnboardingGuide {
   @Prop({ type: [OnboardingSectionSchema], default: [] })
   sections: OnboardingSection[];
 
+  // A flat list of short daily-conduct rules for new hires (e.g. "Clock in before your shift
+  // starts") — plain strings rather than titled sections since these are meant to be skimmed as
+  // a single checklist, not browsed/searched one at a time like sections are.
+  @Prop({ type: [String], default: [] })
+  rules: string[];
+
   @Prop({ type: Types.ObjectId, ref: 'User' })
   updatedBy?: Types.ObjectId;
 }

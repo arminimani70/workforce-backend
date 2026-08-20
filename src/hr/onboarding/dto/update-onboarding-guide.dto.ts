@@ -3,6 +3,7 @@ import {
   ArrayMaxSize,
   IsArray,
   IsNotEmpty,
+  IsOptional,
   IsString,
   MaxLength,
   ValidateNested,
@@ -25,4 +26,11 @@ export class UpdateOnboardingGuideDto {
   @ValidateNested({ each: true })
   @Type(() => OnboardingSectionDto)
   sections: OnboardingSectionDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(200)
+  @IsString({ each: true })
+  @MaxLength(500, { each: true })
+  rules?: string[];
 }
