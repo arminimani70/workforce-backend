@@ -6,26 +6,32 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { isValidObjectId, Model } from 'mongoose';
 import {
-  StockTemplate,
-  StockTemplateDocument,
-} from './schemas/stock-template.schema';
+  OrderListTemplate,
+  OrderListTemplateDocument,
+} from './schemas/order-list-template.schema';
 import {
-  StockSubmission,
-  StockSubmissionDocument,
-} from './schemas/stock-submission.schema';
-import { UpsertStockTemplateDto } from './dto/upsert-stock-template.dto';
-import { SubmitStockDto, StockQuantityDto } from './dto/submit-stock.dto';
+  OrderListSubmission,
+  OrderListSubmissionDocument,
+} from './schemas/order-list-submission.schema';
+import { UpsertOrderListTemplateDto } from './dto/upsert-order-list-template.dto';
+import {
+  SubmitOrderListDto,
+  OrderQuantityDto,
+} from './dto/submit-order-list.dto';
 
 @Injectable()
-export class StockService {
+export class OrderListsService {
   constructor(
-    @InjectModel(StockTemplate.name)
-    private readonly templateModel: Model<StockTemplateDocument>,
-    @InjectModel(StockSubmission.name)
-    private readonly submissionModel: Model<StockSubmissionDocument>,
+    @InjectModel(OrderListTemplate.name)
+    private readonly templateModel: Model<OrderListTemplateDocument>,
+    @InjectModel(OrderListSubmission.name)
+    private readonly submissionModel: Model<OrderListSubmissionDocument>,
   ) {}
 
-  async upsertTemplate(organizationId: string, dto: UpsertStockTemplateDto) {
+  async upsertTemplate(
+    organizationId: string,
+    dto: UpsertOrderListTemplateDto,
+  ) {
     const fields = {
       jobSite: dto.jobSite.trim(),
       title: dto.title.trim(),
@@ -34,7 +40,7 @@ export class StockService {
 
     if (dto.id) {
       if (!isValidObjectId(dto.id)) {
-        throw new NotFoundException('Stock list not found');
+        throw new NotFoundException('Order list not found');
       }
       const updated = await this.templateModel.findOneAndUpdate(
         { _id: dto.id, organizationId },
@@ -42,7 +48,7 @@ export class StockService {
         { new: true },
       );
       if (!updated) {
-        throw new NotFoundException('Stock list not found');
+        throw new NotFoundException('Order list not found');
       }
       return updated;
     }
@@ -50,7 +56,7 @@ export class StockService {
     return this.templateModel.create({ organizationId, ...fields });
   }
 
-  // Any authenticated user — the catalog to pick a stock list from, grouped by branch on the
+  // Any authenticated user — the catalog to pick an order list from, grouped by branch on the
   // client.
   listTemplates(organizationId: string) {
     return this.templateModel
@@ -60,31 +66,31 @@ export class StockService {
 
   async deleteTemplate(organizationId: string, id: string) {
     if (!isValidObjectId(id)) {
-      throw new NotFoundException('Stock list not found');
+      throw new NotFoundException('Order list not found');
     }
     const deleted = await this.templateModel.findOneAndDelete({
       _id: id,
       organizationId,
     });
     if (!deleted) {
-      throw new NotFoundException('Stock list not found');
+      throw new NotFoundException('Order list not found');
     }
   }
 
   async submit(
     organizationId: string,
     employeeId: string,
-    dto: SubmitStockDto,
+    dto: SubmitOrderListDto,
   ) {
-    if (!isValidObjectId(dto.stockTemplateId)) {
-      throw new NotFoundException('Stock list not found');
+    if (!isValidObjectId(dto.orderListTemplateId)) {
+      throw new NotFoundException('Order list not found');
     }
     const template = await this.templateModel.findOne({
-      _id: dto.stockTemplateId,
+      _id: dto.orderListTemplateId,
       organizationId,
     });
     if (!template) {
-      throw new NotFoundException('Stock list not found');
+      throw new NotFoundException('Order list not found');
     }
 
     const quantityByProduct = new Map(
@@ -108,7 +114,7 @@ export class StockService {
 
     return this.submissionModel.create({
       organizationId,
-      stockTemplateId: template._id,
+      orderListTemplateId: template._id,
       templateTitle: template.title,
       jobSite: template.jobSite,
       employeeId,
@@ -116,7 +122,7 @@ export class StockService {
     });
   }
 
-  // Org-wide, owner/manager only — every stock count ever submitted, newest first.
+  // Org-wide, owner/manager only — every order ever submitted, newest first.
   listSubmissions(organizationId: string) {
     return this.submissionModel
       .find({ organizationId })
@@ -124,12 +130,12 @@ export class StockService {
       .sort({ createdAt: -1 });
   }
 
-  // Owner/manager correcting a submitted count's quantities after the fact. productName/unit
+  // Owner/manager correcting a submitted order's quantities after the fact. productName/unit
   // stay exactly as originally submitted — only the quantity values change.
   async updateSubmission(
     organizationId: string,
     id: string,
-    quantities: StockQuantityDto[],
+    quantities: OrderQuantityDto[],
   ) {
     if (!isValidObjectId(id)) {
       throw new NotFoundException('Submission not found');

@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import {
+  IsDateString,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 
 export class CreateWastageEntryDto {
   @IsString()
@@ -20,4 +26,9 @@ export class CreateWastageEntryDto {
   @IsNotEmpty()
   @MaxLength(50)
   amount: string;
+
+  // When the waste actually happened, e.g. "2026-08-15" — omit to default to now.
+  @IsOptional()
+  @IsDateString()
+  occurredAt?: string;
 }

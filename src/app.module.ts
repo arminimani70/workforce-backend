@@ -16,6 +16,7 @@ import { FormsModule } from './operations/forms/forms.module';
 import { BranchesModule } from './operations/branches/branches.module';
 import { StockModule } from './operations/stock/stock.module';
 import { WastageModule } from './operations/wastage/wastage.module';
+import { OrderListsModule } from './operations/order-lists/order-lists.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { WastageModule } from './operations/wastage/wastage.module';
     BranchesModule,
     StockModule,
     WastageModule,
+    OrderListsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

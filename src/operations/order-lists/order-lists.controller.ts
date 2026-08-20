@@ -15,29 +15,29 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../../auth/types/authenticated-user.type';
 import { UserRole } from '../../users/schemas/user.schema';
-import { StockService } from './stock.service';
-import { UpsertStockTemplateDto } from './dto/upsert-stock-template.dto';
-import { SubmitStockDto } from './dto/submit-stock.dto';
-import { UpdateStockSubmissionDto } from './dto/update-stock-submission.dto';
+import { OrderListsService } from './order-lists.service';
+import { UpsertOrderListTemplateDto } from './dto/upsert-order-list-template.dto';
+import { SubmitOrderListDto } from './dto/submit-order-list.dto';
+import { UpdateOrderSubmissionDto } from './dto/update-order-submission.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Controller('stock')
-export class StockController {
-  constructor(private readonly stockService: StockService) {}
+@Controller('order-lists')
+export class OrderListsController {
+  constructor(private readonly orderListsService: OrderListsService) {}
 
   @Roles(UserRole.OWNER, UserRole.MANAGER)
   @Put('templates')
   upsertTemplate(
     @CurrentUser() user: AuthenticatedUser,
-    @Body() dto: UpsertStockTemplateDto,
+    @Body() dto: UpsertOrderListTemplateDto,
   ) {
-    return this.stockService.upsertTemplate(user.organizationId, dto);
+    return this.orderListsService.upsertTemplate(user.organizationId, dto);
   }
 
-  // Any authenticated user — the catalog to pick a stock list from.
+  // Any authenticated user — the catalog to pick an order list from.
   @Get('templates')
   listTemplates(@CurrentUser() user: AuthenticatedUser) {
-    return this.stockService.listTemplates(user.organizationId);
+    return this.orderListsService.listTemplates(user.organizationId);
   }
 
   @Roles(UserRole.OWNER, UserRole.MANAGER)
@@ -46,18 +46,21 @@ export class StockController {
     @CurrentUser() user: AuthenticatedUser,
     @Param('id') id: string,
   ) {
-    return this.stockService.deleteTemplate(user.organizationId, id);
+    return this.orderListsService.deleteTemplate(user.organizationId, id);
   }
 
   @Post('submissions')
-  submit(@CurrentUser() user: AuthenticatedUser, @Body() dto: SubmitStockDto) {
-    return this.stockService.submit(user.organizationId, user.userId, dto);
+  submit(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: SubmitOrderListDto,
+  ) {
+    return this.orderListsService.submit(user.organizationId, user.userId, dto);
   }
 
   @Roles(UserRole.OWNER, UserRole.MANAGER)
   @Get('submissions')
   listSubmissions(@CurrentUser() user: AuthenticatedUser) {
-    return this.stockService.listSubmissions(user.organizationId);
+    return this.orderListsService.listSubmissions(user.organizationId);
   }
 
   @Roles(UserRole.OWNER, UserRole.MANAGER)
@@ -65,9 +68,9 @@ export class StockController {
   updateSubmission(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id') id: string,
-    @Body() dto: UpdateStockSubmissionDto,
+    @Body() dto: UpdateOrderSubmissionDto,
   ) {
-    return this.stockService.updateSubmission(
+    return this.orderListsService.updateSubmission(
       user.organizationId,
       id,
       dto.quantities,
@@ -80,6 +83,6 @@ export class StockController {
     @CurrentUser() user: AuthenticatedUser,
     @Param('id') id: string,
   ) {
-    return this.stockService.deleteSubmission(user.organizationId, id);
+    return this.orderListsService.deleteSubmission(user.organizationId, id);
   }
 }

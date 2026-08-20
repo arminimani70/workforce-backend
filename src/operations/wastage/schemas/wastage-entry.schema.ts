@@ -33,6 +33,12 @@ export class WastageEntry {
   @Prop({ required: true, maxlength: 50 })
   amount: string;
 
+  // When the waste actually happened, as opposed to createdAt (when it was reported) — an
+  // employee filing a report today might be recording something from yesterday or last week.
+  // Defaults to "now" when the employee doesn't back-date it.
+  @Prop({ required: true, default: Date.now })
+  occurredAt: Date;
+
   // Not @Prop-decorated — added by { timestamps: true }; declared so TS knows about it.
   createdAt: Date;
 }

@@ -72,6 +72,7 @@ export class WastageService {
       reason: dto.reason,
       productName: dto.productName,
       amount: dto.amount,
+      occurredAt: dto.occurredAt ? new Date(dto.occurredAt) : undefined,
     });
   }
 

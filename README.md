@@ -228,7 +228,24 @@ Requires a running MongoDB instance (local `mongod`, Docker, or Atlas) reachable
   exactly the template's current product set — no missing or extra rows — then snapshots the
   list's title/branch and each row's productName/unit/quantity, so a submission stays readable
   even if the template is later edited or deleted), `GET /stock/submissions` (owner/manager
-  only — every stock count ever submitted, newest first, employee populated).
+  only — every stock count ever submitted, newest first, employee populated). Quantities are
+  never rounded or validated as integers — a product's weight might be fractional (half a kilo)
+  — and owner/manager can correct a submission after the fact: `PATCH /stock/submissions/:id`
+  (`{ quantities: [{ productName, quantity }] }` — productName/unit stay exactly as submitted,
+  only the quantity values change) and `DELETE /stock/submissions/:id`.
+- **operations/order-lists** — structurally identical to stock (manager-built, named lists of
+  products per branch; an employee submitting only enters a quantity per predefined row) but
+  framed around ordering supplies rather than counting what's on hand — a manager sets up an
+  order list once, then whoever's responsible fills it out periodically (e.g. weekly) to place
+  the next order. `PUT /order-lists/templates` (owner/manager only — same upsert-by-`{id}`
+  shape as stock: `{ id?, jobSite, title, items: [{ productName, unit }] }`), `GET
+  /order-lists/templates` (any authenticated user), `DELETE /order-lists/templates/:id`
+  (owner/manager only). `POST /order-lists/submissions` (any authenticated user — `{
+  orderListTemplateId, quantities: [{ productName, quantity }] }`, same exact-coverage
+  validation and snapshot behavior as stock; quantities are decimal-friendly here too), `GET
+  /order-lists/submissions` (owner/manager only), `PATCH` / `DELETE
+  /order-lists/submissions/:id` (owner/manager only, same "only the quantities are editable"
+  behavior as stock's).
 - **operations/wastage** — reporting damaged/expired/spilled product. `reasons` is an org-wide,
   manager-editable catalog (e.g. "Expired", "Damaged", "Spilled") that populates the reason
   picker on the submission form: `PUT /wastage/reasons` (owner/manager only — creates a new
@@ -238,9 +255,12 @@ Requires a running MongoDB instance (local `mongod`, Docker, or Atlas) reachable
   catalog — both stored as plain-text snapshots, same convention as `Shift.jobSite` — but
   `productName`/`amount` are always free text the employee types by hand, since there's no
   fixed product catalog to pick from (unlike stock's manager-built lists): `POST
-  /wastage/entries` (any authenticated user — `{ jobSite, reason, productName, amount }`), `GET
-  /wastage/entries` (owner/manager only — every wastage report ever submitted, newest first,
-  employee populated).
+  /wastage/entries` (any authenticated user — `{ jobSite, reason, productName, amount,
+  occurredAt? }`; `occurredAt` is an optional ISO date — when the waste actually happened, since
+  an employee filing today might be recording something from yesterday or last week — and
+  defaults to now when omitted, kept separate from `createdAt` which always tracks when the
+  report was filed), `GET /wastage/entries` (owner/manager only — every wastage report ever
+  submitted, newest first, employee populated).
 
 All non-auth routes require `Authorization: Bearer <accessToken>`. Routes marked
 "owner/manager only" are enforced by `RolesGuard` + `@Roles(...)` — an employee token gets a
