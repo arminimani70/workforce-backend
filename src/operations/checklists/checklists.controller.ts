@@ -1,7 +1,9 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  Param,
   Patch,
   Put,
   Query,
@@ -38,6 +40,15 @@ export class ChecklistsController {
   @Get('templates')
   findAllTemplates(@CurrentUser() user: AuthenticatedUser) {
     return this.checklistsService.findAllTemplates(user.organizationId);
+  }
+
+  @Roles(UserRole.OWNER, UserRole.MANAGER)
+  @Delete('templates/:id')
+  deleteTemplate(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+  ) {
+    return this.checklistsService.deleteTemplate(user.organizationId, id);
   }
 
   @Roles(UserRole.OWNER, UserRole.MANAGER)

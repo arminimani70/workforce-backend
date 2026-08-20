@@ -1,6 +1,10 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { isValidObjectId, Model } from 'mongoose';
 import {
   ChecklistTemplate,
   ChecklistTemplateDocument,
@@ -84,6 +88,19 @@ export class ChecklistsService {
     return this.templateModel
       .find({ organizationId })
       .sort({ position: 1, jobSite: 1 });
+  }
+
+  async deleteTemplate(organizationId: string, id: string) {
+    if (!isValidObjectId(id)) {
+      throw new NotFoundException('Checklist not found');
+    }
+    const deleted = await this.templateModel.findOneAndDelete({
+      _id: id,
+      organizationId,
+    });
+    if (!deleted) {
+      throw new NotFoundException('Checklist not found');
+    }
   }
 
   // Resolves the live checklist for a position+branch: the matching template (empty lists if

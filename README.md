@@ -39,7 +39,11 @@ Requires a running MongoDB instance (local `mongod`, Docker, or Atlas) reachable
   a base64 `data:image/...` URI, not an external link, capped at 700,000 characters — the
   client should resize/compress before upload), `PATCH /users/me/password` (`currentPassword`
   + `newPassword`, verified against the stored hash before it's changed — `401` on a wrong
-  current password).
+  current password). Owner/manager can also manage other team members directly: `PATCH
+  /users/:id` (`{ fullName?, email?, role?, status? }` — `role` is restricted to
+  `employee`/`manager` here, promoting someone to `owner` isn't something this endpoint does;
+  `status` is restricted to `active`/`suspended`; `403`s if the target is the organization
+  owner) and `DELETE /users/:id` (`403`s on deleting yourself or the organization owner).
 - **organizations** — `GET /organizations/me`
 - **operations/time-clock** — `POST /time-clock/clock-in` (`{ lat?, lng?, dayStart?, dayEnd?,
   reason?, jobSite?, position? }`), `POST /time-clock/clock-out` (`{ lat?, lng? }`),
@@ -157,7 +161,7 @@ Requires a running MongoDB instance (local `mongod`, Docker, or Atlas) reachable
   (owner/manager only — upserts by `position` + `jobSite`: `{ position, jobSite?, title?,
   openingItems: string[], closingItems: string[], allowPhoto? }`), `GET /checklists/templates`
   (any authenticated user — every template in the org, doubling as the catalog of checklist
-  "forms" to browse and pick from).
+  "forms" to browse and pick from), `DELETE /checklists/templates/:id` (owner/manager only).
 
   Filling one out is **not tied to a shift, a day, or one employee** — it's one live, shared
   sheet per (`position`, `jobSite`), since several different people can hold the same position
