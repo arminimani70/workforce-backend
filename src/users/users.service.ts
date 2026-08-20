@@ -152,7 +152,7 @@ export class UsersService {
     if (dto.avatarUrl !== undefined) update.avatarUrl = dto.avatarUrl;
 
     const updated = await this.userModel.findByIdAndUpdate(userId, update, {
-      new: true,
+      returnDocument: 'after',
     });
     if (!updated) {
       throw new NotFoundException('User not found');

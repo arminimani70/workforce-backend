@@ -51,7 +51,7 @@ export class ChecklistsService {
         closingItems: dto.closingItems,
         allowPhoto: dto.allowPhoto ?? false,
       },
-      { upsert: true, new: true },
+      { upsert: true, returnDocument: 'after' },
     );
   }
 
@@ -151,7 +151,7 @@ export class ChecklistsService {
     const updated = await this.completionModel.findOneAndUpdate(
       { organizationId, position, jobSite, [`${field}.item`]: item },
       { $set: { ...itemSet, lastUpdatedBy: employeeId } },
-      { new: true },
+      { returnDocument: 'after' },
     );
     if (updated) {
       return updated;
@@ -164,7 +164,7 @@ export class ChecklistsService {
         $set: { lastUpdatedBy: employeeId },
         $push: { [field]: { item, done, note } },
       },
-      { upsert: true, new: true },
+      { upsert: true, returnDocument: 'after' },
     );
   }
 

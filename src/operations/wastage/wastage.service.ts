@@ -31,7 +31,7 @@ export class WastageService {
       const updated = await this.reasonModel.findOneAndUpdate(
         { _id: dto.id, organizationId },
         { label },
-        { new: true },
+        { returnDocument: 'after' },
       );
       if (!updated) {
         throw new NotFoundException('Reason not found');

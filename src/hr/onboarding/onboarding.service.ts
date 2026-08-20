@@ -47,7 +47,7 @@ export class OnboardingService {
     return this.guideModel.findOneAndUpdate(
       { organizationId },
       { organizationId, sections, rules, updatedBy: userId },
-      { upsert: true, new: true },
+      { upsert: true, returnDocument: 'after' },
     );
   }
 

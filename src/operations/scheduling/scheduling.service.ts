@@ -94,7 +94,7 @@ export class SchedulingService {
     const shift = await this.shiftModel.findOneAndUpdate(
       { _id: shiftId, organizationId },
       { approval },
-      { new: true },
+      { returnDocument: 'after' },
     );
     if (!shift) {
       throw new NotFoundException('Shift not found');

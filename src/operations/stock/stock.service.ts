@@ -39,7 +39,7 @@ export class StockService {
       const updated = await this.templateModel.findOneAndUpdate(
         { _id: dto.id, organizationId },
         fields,
-        { new: true },
+        { returnDocument: 'after' },
       );
       if (!updated) {
         throw new NotFoundException('Stock list not found');
