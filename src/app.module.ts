@@ -17,6 +17,8 @@ import { BranchesModule } from './operations/branches/branches.module';
 import { StockModule } from './operations/stock/stock.module';
 import { WastageModule } from './operations/wastage/wastage.module';
 import { OrderListsModule } from './operations/order-lists/order-lists.module';
+import { BillingModule } from './billing/billing.module';
+import { PlatformAdminModule } from './platform-admin/platform-admin.module';
 
 @Module({
   imports: [
@@ -41,6 +43,8 @@ import { OrderListsModule } from './operations/order-lists/order-lists.module';
     StockModule,
     WastageModule,
     OrderListsModule,
+    BillingModule,
+    PlatformAdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],
