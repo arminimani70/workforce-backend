@@ -48,8 +48,10 @@ export class PlatformAdminService implements OnModuleInit {
   }
 
   async login(dto: PlatformAdminLoginDto): Promise<{ accessToken: string }> {
+    // The schema lowercases email on save; match that here so a login typed with different
+    // casing than the bootstrap env var still finds the account.
     const admin = await this.platformAdminModel
-      .findOne({ email: dto.email })
+      .findOne({ email: dto.email.toLowerCase() })
       .select('+passwordHash');
     if (!admin) {
       throw new UnauthorizedException('Invalid credentials');
