@@ -175,6 +175,23 @@ export class TimeClockService {
       .limit(limit);
   }
 
+  // Owner/manager only — every employee's clock entries in range, for the admin panel's
+  // attendance report. Unlike getHistory (one employee, most-recent-first, capped), this has
+  // no employee filter and no cap; from/to bound it instead.
+  findAllInOrg(organizationId: string, from?: Date, to?: Date) {
+    const filter: QueryFilter<TimeClockEntryDocument> = { organizationId };
+    if (from || to) {
+      filter.clockInTime = {
+        ...(from && { $gte: from }),
+        ...(to && { $lte: to }),
+      };
+    }
+    return this.entryModel
+      .find(filter)
+      .populate('employeeId', 'fullName role')
+      .sort({ clockInTime: -1 });
+  }
+
   // Sums (clockOutTime ?? now) - clockInTime for every entry that *started* in [from, to],
   // so a currently open entry counts toward the total up to this instant.
   async getTotalDuration(
