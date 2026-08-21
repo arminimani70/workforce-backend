@@ -14,8 +14,11 @@ import {
   PlatformAdminDocument,
 } from './schemas/platform-admin.schema';
 import { PlatformAdminLoginDto } from './dto/platform-admin-login.dto';
+import { UpdatePlanDto } from './dto/update-plan.dto';
+import { UpdateOrganizationDto } from './dto/update-organization.dto';
 import { OrganizationsService } from '../organizations/organizations.service';
 import { UsersService } from '../users/users.service';
+import { PlansService } from '../billing/plans.service';
 
 const SALT_ROUNDS = 10;
 
@@ -30,6 +33,7 @@ export class PlatformAdminService implements OnModuleInit {
     private readonly configService: ConfigService,
     private readonly organizationsService: OrganizationsService,
     private readonly usersService: UsersService,
+    private readonly plansService: PlansService,
   ) {}
 
   // There's normally exactly one platform admin — you. Rather than a manual DB insert, boot
@@ -99,5 +103,17 @@ export class PlatformAdminService implements OnModuleInit {
         };
       }),
     );
+  }
+
+  listPlans() {
+    return this.plansService.findAll();
+  }
+
+  updatePlan(key: string, dto: UpdatePlanDto) {
+    return this.plansService.update(key, dto);
+  }
+
+  updateOrganization(organizationId: string, dto: UpdateOrganizationDto) {
+    return this.organizationsService.adminUpdate(organizationId, dto);
   }
 }

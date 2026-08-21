@@ -75,4 +75,24 @@ export class OrganizationsService {
   ): Promise<void> {
     await this.organizationModel.updateOne({ _id: organizationId }, fields);
   }
+
+  // Super-admin manual override — bumping/cutting seats or flipping subscription state by hand,
+  // bypassing Lemon Squeezy entirely (comped seats, support fixes, manual cancellation).
+  async adminUpdate(
+    organizationId: string,
+    fields: {
+      seatLimit?: number;
+      subscriptionStatus?: SubscriptionStatus;
+    },
+  ): Promise<OrganizationDocument> {
+    const updated = await this.organizationModel.findOneAndUpdate(
+      { _id: organizationId },
+      fields,
+      { new: true },
+    );
+    if (!updated) {
+      throw new NotFoundException('Organization not found');
+    }
+    return updated;
+  }
 }

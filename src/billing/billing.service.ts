@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHmac, timingSafeEqual } from 'crypto';
-import { findPlan, PLANS } from './plans';
+import { PlansService } from './plans.service';
 import { OrganizationsService } from '../organizations/organizations.service';
 import { UsersService } from '../users/users.service';
 import { SubscriptionStatus } from '../organizations/schemas/organization.schema';
@@ -52,11 +52,13 @@ export class BillingService {
     private readonly configService: ConfigService,
     private readonly organizationsService: OrganizationsService,
     private readonly usersService: UsersService,
+    private readonly plansService: PlansService,
   ) {}
 
-  getPlans() {
-    return PLANS.map(({ id, name, seatLimit, priceMonthlyEur }) => ({
-      id,
+  async getPlans() {
+    const plans = await this.plansService.findAll();
+    return plans.map(({ key, name, seatLimit, priceMonthlyEur }) => ({
+      id: key,
       name,
       seatLimit,
       priceMonthlyEur,
@@ -71,14 +73,13 @@ export class BillingService {
     userId: string,
     planId: string,
   ): Promise<{ url: string }> {
-    const plan = findPlan(planId);
+    const plan = await this.plansService.findByKey(planId);
     if (!plan) {
       throw new BadRequestException('Unknown plan');
     }
-    const variantId = this.configService.get<string>(plan.variantIdEnvVar);
-    if (!variantId) {
+    if (!plan.lemonSqueezyVariantId) {
       throw new InternalServerErrorException(
-        `Billing isn't configured for the "${plan.id}" plan yet (missing ${plan.variantIdEnvVar}).`,
+        `Billing isn't configured for the "${plan.key}" plan yet — set its Lemon Squeezy variant from the platform admin panel.`,
       );
     }
     const storeId = this.configService.getOrThrow<string>(
@@ -114,7 +115,9 @@ export class BillingService {
           },
           relationships: {
             store: { data: { type: 'stores', id: storeId } },
-            variant: { data: { type: 'variants', id: variantId } },
+            variant: {
+              data: { type: 'variants', id: plan.lemonSqueezyVariantId },
+            },
           },
         },
       }),
@@ -170,10 +173,9 @@ export class BillingService {
 
     const { attributes } = payload.data;
     const status = STATUS_MAP[attributes.status] ?? SubscriptionStatus.PAST_DUE;
-    const plan = PLANS.find(
-      (p) =>
-        this.configService.get<string>(p.variantIdEnvVar) ===
-        String(attributes.variant_id),
+    const plans = await this.plansService.findAll();
+    const plan = plans.find(
+      (p) => p.lemonSqueezyVariantId === String(attributes.variant_id),
     );
 
     try {
@@ -186,7 +188,7 @@ export class BillingService {
       subscriptionStatus: status,
       seatLimit:
         status === SubscriptionStatus.ACTIVE ? plan?.seatLimit : undefined,
-      planId: plan?.id,
+      planId: plan?.key,
       lemonSqueezyCustomerId: String(attributes.customer_id),
       lemonSqueezySubscriptionId: payload.data.id,
       currentPeriodEnd: attributes.renews_at
