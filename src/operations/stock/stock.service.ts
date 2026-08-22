@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { isValidObjectId, Model } from 'mongoose';
+import { isValidObjectId, Model, Types } from 'mongoose';
 import {
   StockTemplate,
   StockTemplateDocument,
@@ -220,29 +220,21 @@ export class StockService {
       throw new NotFoundException('Stock list not found');
     }
 
+    // Cast explicitly rather than relying on Mongoose's implicit query-cast for this path — see
+    // commit message for why.
     const latestSubmission = await this.submissionModel
-      .findOne({ organizationId, stockTemplateId: templateId })
+      .findOne({
+        organizationId,
+        stockTemplateId: new Types.ObjectId(templateId),
+      })
       .sort({ createdAt: -1 });
-    // TEMP debug — remove once the "on hand always 0" issue is diagnosed.
+    // TEMP debug — remove once the "on hand always 0" issue is confirmed fixed.
     console.log(
       '[getPurchaseList] organizationId=%s templateId=%s found=%s',
       organizationId,
       templateId,
       !!latestSubmission,
     );
-    if (!latestSubmission) {
-      const countByOrgOnly = await this.submissionModel.countDocuments({
-        organizationId,
-      });
-      const countByTemplateOnly = await this.submissionModel.countDocuments({
-        stockTemplateId: templateId,
-      });
-      console.log(
-        '[getPurchaseList] countByOrgOnly=%d countByTemplateOnly=%d',
-        countByOrgOnly,
-        countByTemplateOnly,
-      );
-    }
     const onHandByProduct = new Map(
       (latestSubmission?.entries ?? []).map((e) => [e.productName, e.quantity]),
     );
