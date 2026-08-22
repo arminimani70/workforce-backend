@@ -80,6 +80,7 @@ export class UsersController {
       fullName: dto.fullName,
       email: dto.email,
       password: dto.password,
+      role: dto.role,
     });
     return toPublicUser(created);
   }
