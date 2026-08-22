@@ -228,13 +228,6 @@ export class StockService {
         stockTemplateId: new Types.ObjectId(templateId),
       })
       .sort({ createdAt: -1 });
-    // TEMP debug — remove once the "on hand always 0" issue is confirmed fixed.
-    console.log(
-      '[getPurchaseList] organizationId=%s templateId=%s found=%s',
-      organizationId,
-      templateId,
-      !!latestSubmission,
-    );
     const onHandByProduct = new Map(
       (latestSubmission?.entries ?? []).map((e) => [e.productName, e.quantity]),
     );
