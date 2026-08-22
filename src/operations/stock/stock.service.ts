@@ -16,6 +16,28 @@ import {
 import { UpsertStockTemplateDto } from './dto/upsert-stock-template.dto';
 import { SubmitStockDto, StockQuantityDto } from './dto/submit-stock.dto';
 
+// How far ahead the purchase list looks for a product's next delivery day — matches the
+// "order a day or two before" lead time managers actually work with.
+const PURCHASE_LOOKAHEAD_DAYS = 2;
+
+// The soonest of today/tomorrow/day-after-tomorrow that has a nonzero par level for this
+// product — that's the delivery day the purchase list should be prepping for. Null if none of
+// those days has one set.
+function findUpcomingTarget(
+  parLevels: number[] | undefined,
+  from: Date,
+): { parLevel: number; date: Date } | null {
+  for (let offset = 0; offset <= PURCHASE_LOOKAHEAD_DAYS; offset++) {
+    const date = new Date(from);
+    date.setDate(date.getDate() + offset);
+    const parLevel = parLevels?.[date.getDay()] ?? 0;
+    if (parLevel > 0) {
+      return { parLevel, date };
+    }
+  }
+  return null;
+}
+
 @Injectable()
 export class StockService {
   constructor(
@@ -157,6 +179,56 @@ export class StockService {
 
     await submission.save();
     return submission;
+  }
+
+  // For every product on this list with a delivery day in the next couple of days, compares
+  // that day's par level against the most recently counted on-hand quantity and suggests how
+  // much more to buy. Products with no upcoming delivery day (par levels all 0, or the ones
+  // set aren't within the lookahead window) are left out entirely — nothing to buy soon.
+  async getPurchaseList(organizationId: string, templateId: string) {
+    if (!isValidObjectId(templateId)) {
+      throw new NotFoundException('Stock list not found');
+    }
+    const template = await this.templateModel.findOne({
+      _id: templateId,
+      organizationId,
+    });
+    if (!template) {
+      throw new NotFoundException('Stock list not found');
+    }
+
+    const latestSubmission = await this.submissionModel
+      .findOne({ organizationId, stockTemplateId: templateId })
+      .sort({ createdAt: -1 });
+    const onHandByProduct = new Map(
+      (latestSubmission?.entries ?? []).map((e) => [e.productName, e.quantity]),
+    );
+
+    const now = new Date();
+    const items = template.items
+      .map((item) => {
+        const target = findUpcomingTarget(item.parLevels, now);
+        if (!target) return null;
+        const currentOnHand = onHandByProduct.get(item.productName) ?? 0;
+        return {
+          productName: item.productName,
+          unit: item.unit,
+          targetDate: target.date,
+          parLevel: target.parLevel,
+          currentOnHand,
+          suggestedQuantity: Math.max(0, target.parLevel - currentOnHand),
+        };
+      })
+      .filter((item): item is NonNullable<typeof item> => item !== null)
+      .sort((a, b) => a.targetDate.getTime() - b.targetDate.getTime());
+
+    return {
+      templateId: template._id,
+      templateTitle: template.title,
+      jobSite: template.jobSite,
+      lastCountedAt: latestSubmission?.createdAt ?? null,
+      items,
+    };
   }
 
   async deleteSubmission(organizationId: string, id: string) {

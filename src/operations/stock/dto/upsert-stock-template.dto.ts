@@ -3,10 +3,12 @@ import {
   ArrayMaxSize,
   ArrayMinSize,
   IsArray,
+  IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
   MaxLength,
+  Min,
   ValidateNested,
 } from 'class-validator';
 
@@ -20,6 +22,16 @@ export class StockItemDto {
   @IsNotEmpty()
   @MaxLength(50)
   unit: string;
+
+  // Optional so existing callers/templates without par levels keep working — defaults to all
+  // zeros (no delivery day set) at the schema level. Exactly 7 entries, index 0=Sunday.
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(7)
+  @ArrayMaxSize(7)
+  @IsInt({ each: true })
+  @Min(0, { each: true })
+  parLevels?: number[];
 }
 
 export class UpsertStockTemplateDto {

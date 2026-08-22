@@ -10,6 +10,13 @@ export class StockItem {
 
   @Prop({ required: true, maxlength: 50 })
   unit: string;
+
+  // One target on-hand quantity per weekday (index 0=Sunday..6=Saturday, matching
+  // Date.getDay()) — the level this product should be restocked up to on that day's delivery.
+  // 0 means "not a delivery day for this product"; the purchase list skips it. Set only on the
+  // days actually restocked (e.g. milk: Monday=14, Thursday=24, the rest left at 0).
+  @Prop({ type: [Number], default: () => [0, 0, 0, 0, 0, 0, 0] })
+  parLevels: number[];
 }
 
 // A manager-built, named list of products to count at one branch (e.g. "Bar Stock", "Kitchen
