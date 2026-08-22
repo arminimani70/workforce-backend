@@ -38,6 +38,27 @@ function findUpcomingTarget(
   return null;
 }
 
+// A stock count is a snapshot from whenever it was last taken — by the time the delivery day
+// actually arrives, some of what's on hand will likely have been used. Treating "on hand just
+// barely reaches par" as confidently "enough" (or "just barely under" as confidently "buy")
+// overstates how precise that snapshot really is. So only call it definitively one way or the
+// other outside a tolerance band around par; inside the band, ask the person to recount instead
+// of guessing. The band is asymmetric on purpose — running out is worse than over-ordering, so
+// the "definitely enough" side needs more headroom (20%) than the "definitely short" side (10%).
+const LOW_STOCK_TOLERANCE = 0.1;
+const HIGH_STOCK_TOLERANCE = 0.2;
+
+export type PurchaseStatus = 'buy' | 'check' | 'enough';
+
+function classifyStock(
+  parLevel: number,
+  currentOnHand: number,
+): PurchaseStatus {
+  if (currentOnHand < parLevel * (1 - LOW_STOCK_TOLERANCE)) return 'buy';
+  if (currentOnHand > parLevel * (1 + HIGH_STOCK_TOLERANCE)) return 'enough';
+  return 'check';
+}
+
 @Injectable()
 export class StockService {
   constructor(
@@ -182,9 +203,11 @@ export class StockService {
   }
 
   // For every product on this list with a delivery day in the next couple of days, compares
-  // that day's par level against the most recently counted on-hand quantity and suggests how
-  // much more to buy. Products with no upcoming delivery day (par levels all 0, or the ones
-  // set aren't within the lookahead window) are left out entirely — nothing to buy soon.
+  // that day's par level against the most recently counted on-hand quantity and classifies it
+  // as 'buy' (confidently short), 'enough' (confidently stocked), or 'check' (too close to par
+  // to call from a snapshot count — see classifyStock). Products with no upcoming delivery day
+  // (par levels all 0, or the ones set aren't within the lookahead window) are left out
+  // entirely — nothing to buy soon.
   async getPurchaseList(organizationId: string, templateId: string) {
     if (!isValidObjectId(templateId)) {
       throw new NotFoundException('Stock list not found');
@@ -217,6 +240,7 @@ export class StockService {
           parLevel: target.parLevel,
           currentOnHand,
           suggestedQuantity: Math.max(0, target.parLevel - currentOnHand),
+          status: classifyStock(target.parLevel, currentOnHand),
         };
       })
       .filter((item): item is NonNullable<typeof item> => item !== null)
