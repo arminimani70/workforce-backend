@@ -223,6 +223,26 @@ export class StockService {
     const latestSubmission = await this.submissionModel
       .findOne({ organizationId, stockTemplateId: templateId })
       .sort({ createdAt: -1 });
+    // TEMP debug — remove once the "on hand always 0" issue is diagnosed.
+    console.log(
+      '[getPurchaseList] organizationId=%s templateId=%s found=%s',
+      organizationId,
+      templateId,
+      !!latestSubmission,
+    );
+    if (!latestSubmission) {
+      const countByOrgOnly = await this.submissionModel.countDocuments({
+        organizationId,
+      });
+      const countByTemplateOnly = await this.submissionModel.countDocuments({
+        stockTemplateId: templateId,
+      });
+      console.log(
+        '[getPurchaseList] countByOrgOnly=%d countByTemplateOnly=%d',
+        countByOrgOnly,
+        countByTemplateOnly,
+      );
+    }
     const onHandByProduct = new Map(
       (latestSubmission?.entries ?? []).map((e) => [e.productName, e.quantity]),
     );
