@@ -40,7 +40,7 @@ export class AvailabilityService {
         endTime: isAvailable ? dto.endTime : undefined,
         positions: isAvailable ? (dto.positions ?? []) : [],
       },
-      { upsert: true, new: true },
+      { upsert: true, returnDocument: 'after' },
     );
   }
 

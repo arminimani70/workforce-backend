@@ -26,7 +26,7 @@ export class BranchesService {
       const updated = await this.branchModel.findOneAndUpdate(
         { _id: dto.id, organizationId },
         fields,
-        { new: true },
+        { returnDocument: 'after' },
       );
       if (!updated) {
         throw new NotFoundException('Branch not found');

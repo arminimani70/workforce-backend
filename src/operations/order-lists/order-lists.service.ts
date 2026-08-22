@@ -45,7 +45,7 @@ export class OrderListsService {
       const updated = await this.templateModel.findOneAndUpdate(
         { _id: dto.id, organizationId },
         fields,
-        { new: true },
+        { returnDocument: 'after' },
       );
       if (!updated) {
         throw new NotFoundException('Order list not found');

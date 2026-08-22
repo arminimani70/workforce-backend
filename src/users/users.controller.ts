@@ -19,11 +19,15 @@ import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
+import { OrganizationsService } from '../organizations/organizations.service';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly organizationsService: OrganizationsService,
+  ) {}
 
   @Get('me')
   getMe(@CurrentUser() user: AuthenticatedUser) {
@@ -63,11 +67,20 @@ export class UsersController {
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CreateEmployeeDto,
   ) {
+    const currentMembers = await this.usersService.findAllInOrg(
+      user.organizationId,
+    );
+    await this.organizationsService.assertSeatAvailable(
+      user.organizationId,
+      currentMembers.length,
+    );
+
     const created = await this.usersService.create({
       organizationId: user.organizationId,
       fullName: dto.fullName,
       email: dto.email,
       password: dto.password,
+      role: dto.role,
     });
     return toPublicUser(created);
   }

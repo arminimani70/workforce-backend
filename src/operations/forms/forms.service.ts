@@ -29,7 +29,7 @@ export class FormsService {
       const updated = await this.templateModel.findOneAndUpdate(
         { _id: dto.id, organizationId },
         { title: dto.title, fields: dto.fields },
-        { new: true },
+        { returnDocument: 'after' },
       );
       if (!updated) {
         throw new NotFoundException('Form not found');

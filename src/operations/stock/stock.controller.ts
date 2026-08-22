@@ -40,6 +40,16 @@ export class StockController {
     return this.stockService.listTemplates(user.organizationId);
   }
 
+  // Any authenticated user — whoever does the shopping run can check what to buy, not just
+  // owner/manager.
+  @Get('templates/:id/purchase-list')
+  getPurchaseList(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+  ) {
+    return this.stockService.getPurchaseList(user.organizationId, id);
+  }
+
   @Roles(UserRole.OWNER, UserRole.MANAGER)
   @Delete('templates/:id')
   deleteTemplate(
