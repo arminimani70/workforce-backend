@@ -71,8 +71,8 @@ export class SchedulingService {
   // Schedule screen's avatar-per-row week view) for any authenticated user, not just
   // owner/manager. Takes the exact window rather than a bare date so the caller's
   // local-timezone day boundaries are used instead of the server's.
-  findCoworkersInRange(organizationId: string, from: Date, to: Date) {
-    return this.shiftModel
+  async findCoworkersInRange(organizationId: string, from: Date, to: Date) {
+    const shifts = await this.shiftModel
       .find({
         organizationId,
         approval: ShiftApproval.APPROVED,
@@ -80,6 +80,10 @@ export class SchedulingService {
       })
       .populate('employeeId', 'fullName role avatarUrl')
       .sort({ startTime: 1 });
+    // A shift's employeeId can point at a since-deleted user (e.g. removed from the team) —
+    // populate silently resolves that to null instead of throwing, so drop those rather than
+    // hand the client a shift with no employee to render.
+    return shifts.filter((shift) => shift.employeeId != null);
   }
 
   private async setApproval(
