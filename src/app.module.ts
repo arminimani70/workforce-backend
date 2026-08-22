@@ -9,6 +9,7 @@ import { OrganizationsModule } from './organizations/organizations.module';
 import { TimeClockModule } from './operations/time-clock/time-clock.module';
 import { SchedulingModule } from './operations/scheduling/scheduling.module';
 import { AvailabilityModule } from './operations/availability/availability.module';
+import { PositionDefaultsModule } from './operations/position-defaults/position-defaults.module';
 import { OnboardingModule } from './hr/onboarding/onboarding.module';
 import { ChatModule } from './communication/chat/chat.module';
 import { ChecklistsModule } from './operations/checklists/checklists.module';
@@ -35,6 +36,7 @@ import { PlatformAdminModule } from './platform-admin/platform-admin.module';
     TimeClockModule,
     SchedulingModule,
     AvailabilityModule,
+    PositionDefaultsModule,
     OnboardingModule,
     ChatModule,
     ChecklistsModule,
